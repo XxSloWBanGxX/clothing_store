@@ -1,11 +1,18 @@
 <?php
 
+require_once __DIR__ . '/../core/Controller.php';
+require_once __DIR__ . '/../models/Product.php';
+
 class HomeController extends Controller
 {
-    public function index(): void
+    public function index()
     {
         $productModel = new Product();
-        $products = $productModel->getAll();
-        $this->view('home/index', ['products' => $products]);
+        $featuredProducts = $productModel->getFeatured(4);
+
+        $this->view('home/index', [
+            'title' => 'Головна',
+            'featuredProducts' => $featuredProducts
+        ]);
     }
 }

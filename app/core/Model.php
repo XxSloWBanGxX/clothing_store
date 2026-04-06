@@ -1,11 +1,14 @@
 <?php
 
+require_once __DIR__ . '/Database.php';
+
 class Model
 {
-    protected PDO $db;
+    protected $db;
 
     public function __construct()
     {
-        $this->db = Database::connect();
+        $database = new Database();
+        $this->db = $database->connect();
     }
 }

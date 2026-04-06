@@ -1,13 +1,28 @@
 <?php
 
+require_once __DIR__ . '/../core/Controller.php';
+require_once __DIR__ . '/../models/User.php';
+
 class ProfileController extends Controller
 {
-    public function index(): void
+    private $userModel;
+
+    public function __construct()
+    {
+        $this->userModel = new User();
+    }
+
+    public function index()
     {
         if (!isset($_SESSION['user'])) {
-            $this->redirect('login');
+            $this->redirect('index.php?url=login');
         }
 
-        $this->view('profile/index', ['user' => $_SESSION['user']]);
+        $user = $this->userModel->findById($_SESSION['user']['id']);
+
+        $this->view('profile/index', [
+            'title' => 'Профіль',
+            'user' => $user
+        ]);
     }
 }
