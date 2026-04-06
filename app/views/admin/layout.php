@@ -19,6 +19,7 @@
 
         <nav class="admin-nav">
             <a href="index.php?url=admin" class="admin-nav-link">Панель управління</a>
+            <a href="index.php?url=admin-orders" class="admin-nav-link">Замовлення</a>
             <a href="index.php?url=admin-products" class="admin-nav-link">Товари</a>
             <a href="index.php?url=admin-create" class="admin-nav-link">Додати товар</a>
             <a href="index.php?url=admin-users" class="admin-nav-link">Користувачі</a>

@@ -7,6 +7,10 @@ require_once __DIR__ . '/../config/config.php';
 require_once __DIR__ . '/../app/core/Controller.php';
 
 require_once __DIR__ . '/../app/controllers/HomeController.php';
+require_once __DIR__ . '/../app/controllers/AboutController.php';
+require_once __DIR__ . '/../app/controllers/NewController.php';
+require_once __DIR__ . '/../app/controllers/CheckoutController.php';
+require_once __DIR__ . '/../app/controllers/AdminOrderController.php';
 require_once __DIR__ . '/../app/controllers/AuthController.php';
 require_once __DIR__ . '/../app/controllers/ProfileController.php';
 require_once __DIR__ . '/../app/controllers/CatalogController.php';
@@ -21,6 +25,46 @@ switch ($url) {
     case 'home':
         $controller = new HomeController();
         $controller->index();
+        break;
+
+    case 'about':
+        $controller = new AboutController();
+        $controller->index();
+        break;
+
+    case 'new':
+        $controller = new NewController();
+        $controller->index();
+        break;
+
+    case 'checkout':
+        $controller = new CheckoutController();
+        $controller->index();
+        break;
+
+    case 'checkout-store':
+        $controller = new CheckoutController();
+        $controller->store();
+        break;
+
+    case 'checkout-success':
+        $controller = new CheckoutController();
+        $controller->success();
+        break;
+
+    case 'admin-orders':
+        $controller = new AdminOrderController();
+        $controller->index();
+        break;
+
+    case 'admin-order-show':
+        $controller = new AdminOrderController();
+        $controller->show();
+        break;
+
+    case 'admin-order-update-status':
+        $controller = new AdminOrderController();
+        $controller->updateStatus();
         break;
 
     case 'catalog':

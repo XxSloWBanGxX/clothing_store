@@ -18,7 +18,7 @@
                     <div class="cart-modal-list">
                         <div class="cart-modal-head">
                             <h2>Товари в кошику</h2>
-                            <p>Вибрано <?= count($data['cartItems']); ?> з <?= count($data['cartItems']); ?></p>
+                            <p>Вибрано <?= count($data['cartItems']); ?> позицій</p>
                         </div>
 
                         <?php foreach ($data['cartItems'] as $item): ?>
@@ -115,7 +115,7 @@
                                 <?= number_format((float)$data['total'], 0, '.', ' '); ?> грн
                             </div>
 
-                            <button type="button" class="cart-order-btn">Оформити замовлення</button>
+                            <a href="index.php?url=checkout" class="cart-order-btn">Оформити замовлення</a>
 
                             <form action="index.php?url=cart-clear" method="POST">
                                 <button type="submit" class="cart-continue-btn">Очистити кошик</button>
