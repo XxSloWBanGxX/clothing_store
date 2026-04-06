@@ -7,6 +7,7 @@ require_once __DIR__ . '/../config/config.php';
 require_once __DIR__ . '/../app/core/Controller.php';
 
 require_once __DIR__ . '/../app/controllers/HomeController.php';
+require_once __DIR__ . '/../app/controllers/AboutController.php';
 require_once __DIR__ . '/../app/controllers/AuthController.php';
 require_once __DIR__ . '/../app/controllers/ProfileController.php';
 require_once __DIR__ . '/../app/controllers/CatalogController.php';
@@ -20,6 +21,11 @@ $url = $_GET['url'] ?? 'home';
 switch ($url) {
     case 'home':
         $controller = new HomeController();
+        $controller->index();
+        break;
+
+    case 'about':
+        $controller = new AboutController();
         $controller->index();
         break;
 

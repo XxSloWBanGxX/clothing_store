@@ -34,8 +34,8 @@ if (!empty($_SESSION['favorite_folders']) && is_array($_SESSION['favorite_folder
         <nav class="main-nav">
             <a href="index.php" class="nav-link">Головна</a>
             <a href="index.php?url=catalog" class="nav-link">Каталог</a>
+            <a href="index.php?url=about" class="nav-link">Про нас</a>
             <a href="#" class="nav-link">Новинки</a>
-            <a href="#" class="nav-link">Про нас</a>
         </nav>
 
         <div class="header-actions">
@@ -73,6 +73,7 @@ if (!empty($_SESSION['favorite_folders']) && is_array($_SESSION['favorite_folder
     <div class="mobile-menu" id="mobileMenu">
         <a href="index.php" class="mobile-link">Головна</a>
         <a href="index.php?url=catalog" class="mobile-link">Каталог</a>
+        <a href="index.php?url=about" class="mobile-link">Про нас</a>
         <a href="index.php?url=favorites" class="mobile-link">Обране</a>
         <a href="index.php?url=cart" class="mobile-link">Кошик</a>
         <?php if (isset($_SESSION['user'])): ?>
