@@ -1,78 +1,190 @@
 <?php
+
 session_start();
 
-require_once '../config/config.php';
+require_once __DIR__ . '/../config/config.php';
 
-require_once '../app/core/Database.php';
-require_once '../app/core/Model.php';
-require_once '../app/core/Controller.php';
+require_once __DIR__ . '/../app/core/Controller.php';
 
-require_once '../app/models/Product.php';
-require_once '../app/models/User.php';
+require_once __DIR__ . '/../app/controllers/HomeController.php';
+require_once __DIR__ . '/../app/controllers/AuthController.php';
+require_once __DIR__ . '/../app/controllers/ProfileController.php';
+require_once __DIR__ . '/../app/controllers/CatalogController.php';
+require_once __DIR__ . '/../app/controllers/ProductController.php';
+require_once __DIR__ . '/../app/controllers/AdminController.php';
+require_once __DIR__ . '/../app/controllers/CartController.php';
+require_once __DIR__ . '/../app/controllers/FavoritesController.php';
 
-require_once '../app/controllers/HomeController.php';
-require_once '../app/controllers/ProductController.php';
-require_once '../app/controllers/CartController.php';
-require_once '../app/controllers/AuthController.php';
-require_once '../app/controllers/ProfileController.php';
-require_once '../app/controllers/AdminController.php';
-
-$url = $_GET['url'] ?? '';
+$url = $_GET['url'] ?? 'home';
 
 switch ($url) {
-    case '':
-        (new HomeController())->index();
+    case 'home':
+        $controller = new HomeController();
+        $controller->index();
+        break;
+
+    case 'catalog':
+        $controller = new CatalogController();
+        $controller->index();
         break;
 
     case 'product':
-        (new ProductController())->show();
+        $controller = new ProductController();
+        $controller->show();
+        break;
+
+    case 'add-to-cart':
+        $controller = new ProductController();
+        $controller->addToCart();
+        break;
+
+    case 'add-to-favorites':
+        $controller = new ProductController();
+        $controller->addToFavorites();
         break;
 
     case 'cart':
-        (new CartController())->index();
+        $controller = new CartController();
+        $controller->index();
         break;
 
-    case 'cart/add':
-        (new CartController())->add();
+    case 'cart-update':
+        $controller = new CartController();
+        $controller->update();
         break;
 
-    case 'cart/remove':
-        (new CartController())->remove();
+    case 'cart-increase':
+        $controller = new CartController();
+        $controller->increase();
         break;
 
-    case 'login':
-        (new AuthController())->login();
+    case 'cart-decrease':
+        $controller = new CartController();
+        $controller->decrease();
         break;
 
-    case 'register':
-        (new AuthController())->register();
+    case 'cart-remove':
+        $controller = new CartController();
+        $controller->remove();
         break;
 
-    case 'logout':
-        (new AuthController())->logout();
+    case 'cart-clear':
+        $controller = new CartController();
+        $controller->clear();
         break;
 
-    case 'profile':
-        (new ProfileController())->index();
+    case 'favorites':
+        $controller = new FavoritesController();
+        $controller->index();
+        break;
+
+    case 'favorites-create-folder':
+        $controller = new FavoritesController();
+        $controller->createFolder();
+        break;
+
+    case 'favorites-remove':
+        $controller = new FavoritesController();
+        $controller->remove();
+        break;
+
+    case 'favorites-clear-folder':
+        $controller = new FavoritesController();
+        $controller->clearFolder();
+        break;
+
+    case 'favorites-delete-folder':
+        $controller = new FavoritesController();
+        $controller->deleteFolder();
         break;
 
     case 'admin':
-        (new AdminController())->dashboard();
+        $controller = new AdminController();
+        $controller->dashboard();
         break;
 
-    case 'admin/create':
-        (new AdminController())->create();
+    case 'admin-products':
+        $controller = new AdminController();
+        $controller->products();
         break;
 
-    case 'admin/edit':
-        (new AdminController())->edit();
+    case 'admin-create':
+        $controller = new AdminController();
+        $controller->create();
         break;
 
-    case 'admin/delete':
-        (new AdminController())->delete();
+    case 'admin-store':
+        $controller = new AdminController();
+        $controller->store();
+        break;
+
+    case 'admin-edit':
+        $controller = new AdminController();
+        $controller->edit();
+        break;
+
+    case 'admin-update':
+        $controller = new AdminController();
+        $controller->update();
+        break;
+
+    case 'admin-delete':
+        $controller = new AdminController();
+        $controller->delete();
+        break;
+
+    case 'admin-users':
+        $controller = new AdminController();
+        $controller->users();
+        break;
+
+    case 'admin-create-user':
+        $controller = new AdminController();
+        $controller->createUser();
+        break;
+
+    case 'admin-store-user':
+        $controller = new AdminController();
+        $controller->storeUser();
+        break;
+
+    case 'admin-delete-user':
+        $controller = new AdminController();
+        $controller->deleteUser();
+        break;
+
+    case 'login':
+        $controller = new AuthController();
+        $controller->login();
+        break;
+
+    case 'login-post':
+        $controller = new AuthController();
+        $controller->loginPost();
+        break;
+
+    case 'register':
+        $controller = new AuthController();
+        $controller->register();
+        break;
+
+    case 'register-post':
+        $controller = new AuthController();
+        $controller->registerPost();
+        break;
+
+    case 'profile':
+        $controller = new ProfileController();
+        $controller->index();
+        break;
+
+    case 'logout':
+        $controller = new AuthController();
+        $controller->logout();
         break;
 
     default:
-        echo "404 - Сторінку не знайдено";
+        $controller = new HomeController();
+        $controller->index();
         break;
 }
