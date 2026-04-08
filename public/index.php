@@ -222,6 +222,16 @@ switch ($url) {
         $controller->index();
         break;
 
+    case 'profile-change-password':
+        $controller = new ProfileController();
+        $controller->changePassword();
+        break;
+
+    case 'profile-order':
+        $controller = new ProfileController();
+        $controller->order();
+        break;
+
     case 'logout':
         $controller = new AuthController();
         $controller->logout();

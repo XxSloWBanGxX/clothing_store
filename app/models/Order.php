@@ -162,4 +162,41 @@ class Order extends Model
             'status' => $status
         ]);
     }
+
+    public function getByUserId($userId)
+    {
+        $stmt = $this->db->prepare("
+            SELECT *
+            FROM orders
+            WHERE user_id = :user_id
+            ORDER BY id DESC
+        ");
+        $stmt->execute(['user_id' => $userId]);
+
+        return $stmt->fetchAll();
+    }
+
+    public function getUserOrderWithItems($orderId, $userId)
+    {
+        $stmt = $this->db->prepare("
+            SELECT *
+            FROM orders
+            WHERE id = :id AND user_id = :user_id
+            LIMIT 1
+        ");
+        $stmt->execute([
+            'id' => $orderId,
+            'user_id' => $userId
+        ]);
+
+        $order = $stmt->fetch();
+
+        if (!$order) {
+            return null;
+        }
+
+        $order['items'] = $this->getItemsByOrderId($orderId);
+
+        return $order;
+    }
 }
