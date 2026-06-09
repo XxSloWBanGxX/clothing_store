@@ -42,6 +42,11 @@ switch ($url) {
         $controller->index();
         break;
 
+    case 'checkout-selected':
+        $controller = new CheckoutController();
+        $controller->selectedIndex();
+        break;
+
     case 'checkout-store':
         $controller = new CheckoutController();
         $controller->store();

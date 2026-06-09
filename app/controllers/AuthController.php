@@ -58,7 +58,7 @@ class AuthController extends Controller
             return;
         }
 
-        $user = $this->userModel->findByLogin($login);
+        $user = $this->userModel->findByEmailOrUsername($login);
 
         if (!$user || !password_verify($password, $user['password'])) {
             $this->view('auth/login', [

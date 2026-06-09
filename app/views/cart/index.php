@@ -14,18 +14,27 @@
     <section class="cart-section">
         <div class="container">
             <?php if (!empty($data['cartItems'])): ?>
-                <div class="cart-modal-layout">
-                    <div class="cart-modal-list">
-                        <div class="cart-modal-head">
-                            <h2>Товари в кошику</h2>
-                            <p>Вибрано <?= count($data['cartItems']); ?> позицій</p>
-                        </div>
+                <form id="cartSelectionForm" method="POST" action="index.php?url=checkout-selected">
+                    <div class="cart-modal-layout">
+                        <div class="cart-modal-list">
+                            <div class="cart-modal-head">
+                                <h2>Товари в кошику</h2>
+                                <p>
+                                    Всього <?= count($data['cartItems']); ?> позицій | 
+                                    Вибрано: <span id="selectedCount">0</span>
+                                </p>
+                            </div>
 
-                        <?php foreach ($data['cartItems'] as $item): ?>
-                            <div class="cart-modal-item">
-                                <div class="cart-modal-check">
-                                    <input type="checkbox" checked disabled>
-                                </div>
+                            <?php foreach ($data['cartItems'] as $item): ?>
+                                <div class="cart-modal-item">
+                                    <div class="cart-modal-check">
+                                        <input 
+                                            type="checkbox" 
+                                            class="cart-item-checkbox" 
+                                            value="<?= (int)$item['cart_item_id']; ?>"
+                                            data-price="<?= (float)$item['subtotal']; ?>"
+                                        >
+                                    </div>
 
                                 <div class="cart-modal-image-wrap">
                                     <?php if (!empty($item['product']['image'])): ?>
@@ -111,18 +120,37 @@
 
                     <aside class="cart-modal-summary">
                         <div class="cart-modal-summary-box">
-                            <div class="cart-modal-total">
-                                <?= number_format((float)$data['total'], 0, '.', ' '); ?> грн
+                            <div class="cart-modal-summary-line">
+                                <span>Всього сума:</span>
+                                <strong><?= number_format((float)$data['total'], 0, '.', ' '); ?> грн</strong>
                             </div>
 
-                            <a href="index.php?url=checkout" class="cart-order-btn">Оформити замовлення</a>
+                            <div class="cart-modal-summary-line" style="color: #ff6b35; font-weight: bold;">
+                                <span>Вибрано сума:</span>
+                                <strong id="selectedTotal">0 грн</strong>
+                            </div>
 
-                            <form action="index.php?url=cart-clear" method="POST">
+                            <button 
+                                type="submit" 
+                                class="cart-order-btn"
+                                id="checkoutSelectedBtn"
+                                disabled
+                                style="opacity: 0.6; cursor: not-allowed;"
+                            >
+                                Замовити вибрані
+                            </button>
+
+                            <a href="index.php?url=checkout" class="cart-order-btn" style="background: #999; text-align: center;">
+                                Замовити всі
+                            </a>
+
+                            <form action="index.php?url=cart-clear" method="POST" style="margin-top: 10px;">
                                 <button type="submit" class="cart-continue-btn">Очистити кошик</button>
                             </form>
                         </div>
                     </aside>
                 </div>
+                </form>
             <?php else: ?>
                 <div class="empty-box">
                     <h3>Кошик порожній</h3>
@@ -133,5 +161,70 @@
         </div>
     </section>
 </main>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const checkboxes = document.querySelectorAll('.cart-item-checkbox');
+    const selectedCountSpan = document.getElementById('selectedCount');
+    const selectedTotalSpan = document.getElementById('selectedTotal');
+    const checkoutBtn = document.getElementById('checkoutSelectedBtn');
+    const cartForm = document.getElementById('cartSelectionForm');
 
+    function updateSummary() {
+        let selected = 0;
+        let total = 0;
+
+        checkboxes.forEach(checkbox => {
+            if (checkbox.checked) {
+                selected++;
+                total += parseFloat(checkbox.dataset.price);
+            }
+        });
+
+        selectedCountSpan.textContent = selected;
+        selectedTotalSpan.textContent = selected > 0 
+            ? total.toLocaleString('uk-UA') + ' грн'
+            : '0 грн';
+
+        // Активуємо/деактивуємо кнопку
+        if (selected > 0) {
+            checkoutBtn.disabled = false;
+            checkoutBtn.style.opacity = '1';
+            checkoutBtn.style.cursor = 'pointer';
+        } else {
+            checkoutBtn.disabled = true;
+            checkoutBtn.style.opacity = '0.6';
+            checkoutBtn.style.cursor = 'not-allowed';
+        }
+    }
+
+    checkboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', updateSummary);
+    });
+
+    // Форма перед відправкою
+    cartForm.addEventListener('submit', function(e) {
+        const selected = Array.from(checkboxes)
+            .filter(cb => cb.checked)
+            .map(cb => cb.value);
+
+        if (selected.length === 0) {
+            e.preventDefault();
+            alert('Будь ласка, виберіть товари для замовлення');
+            return;
+        }
+
+        // Додаємо приховані поля для вибраних товарів
+        selected.forEach(itemId => {
+            const input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = 'selected_items[]';
+            input.value = itemId;
+            cartForm.appendChild(input);
+        });
+    });
+
+    // Ініціалізуємо при завантаженні
+    updateSummary();
+});
+</script>
 <?php require_once __DIR__ . '/../layouts/footer.php'; ?>

@@ -60,7 +60,23 @@ class CheckoutController extends Controller
         }
 
         $userId = (int)$_SESSION['user']['id'];
-        $items = $this->cartModel->getItemsByUserId($userId);
+        
+        // Якщо є вибрані товари з сесії - використовуємо тільки їх
+        if (!empty($_SESSION['checkout_items'])) {
+            $selectedItemIds = $_SESSION['checkout_items'];
+            $allItems = $this->cartModel->getItemsByUserId($userId);
+            
+            $items = [];
+            foreach ($allItems as $item) {
+                if (in_array((int)$item['id'], $selectedItemIds)) {
+                    $items[] = $item;
+                }
+            }
+            unset($_SESSION['checkout_items']);
+        } else {
+            // Інакше беремо всі товари з кошика
+            $items = $this->cartModel->getItemsByUserId($userId);
+        }
 
         if (empty($items)) {
             $this->redirect('index.php?url=cart');
@@ -126,9 +142,10 @@ class CheckoutController extends Controller
                 'selected_color_name' => $item['selected_color_name'],
                 'selected_color_hex' => $item['selected_color_hex']
             ]);
-        }
 
-        $this->cartModel->clear($userId);
+            // Видаляємо товар з кошика тільки якщо він був замовлений
+            $this->cartModel->removeByCartItemId((int)$item['id'], $userId);
+        }
 
         $this->redirect('index.php?url=checkout-success&id=' . $orderId);
     }
@@ -150,6 +167,71 @@ class CheckoutController extends Controller
             'title' => 'Замовлення оформлено',
             'order' => $order,
             'items' => $items
+        ]);
+    }
+
+    public function selectedIndex()
+    {
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            $this->redirect('index.php?url=cart');
+        }
+
+        $userId = (int)$_SESSION['user']['id'];
+        $selectedItemIds = (array)($_POST['selected_items'] ?? []);
+
+        if (empty($selectedItemIds)) {
+            $this->redirect('index.php?url=cart');
+        }
+
+        // Валідуємо ID та робимо їх integer
+        $selectedItemIds = array_filter(array_map(function($id) {
+            return (int)$id;
+        }, $selectedItemIds));
+
+        if (empty($selectedItemIds)) {
+            $this->redirect('index.php?url=cart');
+        }
+
+        // Отримуємо всі товари користувача
+        $allItems = $this->cartModel->getItemsByUserId($userId);
+
+        // Фільтруємо тільки вибрані
+        $selectedItems = [];
+        $total = 0;
+
+        foreach ($allItems as $item) {
+            if (in_array((int)$item['id'], $selectedItemIds)) {
+                $subtotal = (float)$item['price'] * (int)$item['quantity'];
+                $total += $subtotal;
+                $selectedItems[] = $item;
+            }
+        }
+
+        if (empty($selectedItems)) {
+            $this->redirect('index.php?url=cart');
+        }
+
+        $user = $_SESSION['user'];
+
+        // Зберігаємо вибрані товари в сесію
+        $_SESSION['checkout_items'] = $selectedItemIds;
+
+        $this->view('checkout/index', [
+            'title' => 'Оформлення замовлення',
+            'cartItems' => $selectedItems,
+            'total' => $total,
+            'isSelected' => true,
+            'errors' => [],
+            'old' => [
+                'full_name' => $user['name'] ?? '',
+                'phone' => $user['phone'] ?? '',
+                'email' => $user['email'] ?? '',
+                'city' => '',
+                'address_line' => '',
+                'delivery_method' => 'nova_poshta',
+                'payment_method' => 'cash_on_delivery',
+                'comment' => ''
+            ]
         ]);
     }
 }

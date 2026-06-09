@@ -2020,6 +2020,21 @@ textarea {
     margin-bottom: 18px;
 }
 
+.cart-modal-summary-line {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 0;
+    border-bottom: 1px solid #f0f0f0;
+    font-size: 0.95rem;
+    color: var(--dark);
+}
+
+.cart-modal-summary-line:last-child {
+    border-bottom: none;
+    margin-bottom: 18px;
+}
+
 .cart-order-btn {
     width: 100%;
     min-height: 58px;
