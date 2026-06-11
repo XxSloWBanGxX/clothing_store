@@ -1,6 +1,8 @@
 @extends('layouts.app')
 
 @php
+/** @var array $data */
+/** @var array $product */
     $product = $data['product'];
     $images = $data['images'] ?? [];
     $sizes = $data['sizes'] ?? [];
@@ -145,19 +147,27 @@
                                     <div class="product-size-title">Колір</div>
                                     <div class="product-color-list">
                                         @foreach ($colors as $index => $color)
-                                            <button
-                                                type="button"
-                                                class="product-color-btn {{ $index === 0 ? 'active' : '' }}"
-                                                data-color-name="{{ $color['color_name'] }}"
-                                                data-color-hex="{{ $color['color_hex'] ?? '' }}"
-                                                title="{{ $color['color_name'] }}"
-                                            >
-                                                <span
-                                                    class="product-color-dot"
-                                                    style="background: {{ $color['color_hex'] ?: '#d9d9df' }};"
-                                                ></span>
-                                                <span class="product-color-name">{{ $color['color_name'] }}</span>
-                                            </button>
+                                            @php
+                                            $buttonColor = '#d9d9df';
+                                            if (!empty($color['color_hex'])) {
+                                                $buttonColor = strpos($color['color_hex'], '#') === 0
+                                                    ? $color['color_hex']
+                                                    : ('#' . $color['color_hex']);
+                                            }
+                                        @endphp
+                                        <button
+                                            type="button"
+                                            class="product-color-btn {{ $index === 0 ? 'active' : '' }}"
+                                            data-color-name="{{ $color['color_name'] }}"
+                                            data-color-hex="{{ $color['color_hex'] ?? '' }}"
+                                            title="{{ $color['color_name'] }}"
+                                        >
+                                            <span
+                                                class="product-color-dot"
+                                                data-color="{{ $buttonColor }}"
+                                            ></span>
+                                            <span class="product-color-name">{{ $color['color_name'] }}</span>
+                                        </button>
                                         @endforeach
                                     </div>
                                 </div>
@@ -238,4 +248,11 @@
         </div>
     </section>
 </main>
+
+<script>
+    // Apply color from data attribute to style
+    document.querySelectorAll('.product-color-dot[data-color]').forEach(element => {
+        element.style.background = element.dataset.color;
+    });
+</script>
 @endsection
