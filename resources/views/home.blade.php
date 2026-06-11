@@ -1,4 +1,3 @@
-
 @extends('layouts.app')
 
 @section('title', 'Головна - CLOTHSTORE')
@@ -17,8 +16,8 @@
                 </p>
 
                 <div class="hero-buttons">
-                    <a href="index.php?url=catalog" class="btn btn-dark">Перейти в каталог</a>
-                    <a href="index.php?url=catalog" class="btn btn-light">Дивитися новинки</a>
+                    <a href="{{ url('/catalog') }}" class="btn btn-dark">Перейти в каталог</a>
+                    <a href="{{ url('/catalog') }}" class="btn btn-light">Дивитися новинки</a>
                 </div>
 
                 <div class="hero-stats">
@@ -71,52 +70,52 @@
                     <span class="section-label">FEATURED</span>
                     <h2>Популярні товари</h2>
                 </div>
-                <a href="index.php?url=catalog" class="section-link">Дивитися все</a>
+                <a href="{{ url('/catalog') }}" class="section-link">Дивитися все</a>
             </div>
 
             <div class="products-grid">
-                <?php if (!empty($data['featuredProducts'])): ?>
-                    <?php foreach ($data['featuredProducts'] as $product): ?>
+                @if (!empty($data['featuredProducts']))
+                    @foreach ($data['featuredProducts'] as $product)
                         <div class="product-card">
                             <div class="product-image">
                                 <span class="product-tag">
-                                    <?= !empty($product['category_name']) ? htmlspecialchars($product['category_name']) : 'New'; ?>
+                                    {{ !empty($product['category_name']) ? $product['category_name'] : 'New' }}
                                 </span>
 
-                                <?php if (!empty($product['image'])): ?>
+                                @if (!empty($product['image']))
                                     <img
-                                        src="assets/images/products/<?= htmlspecialchars($product['image']); ?>"
-                                        alt="<?= htmlspecialchars($product['name']); ?>"
+                                        src="{{ asset('assets/images/products/' . $product['image']) }}"
+                                        alt="{{ $product['name'] }}"
                                         class="home-product-image"
                                         onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';"
                                     >
                                     <div class="image-placeholder image-fallback" style="display:none;">
-                                        <?= htmlspecialchars($product['name']); ?>
+                                        {{ $product['name'] }}
                                     </div>
-                                <?php else: ?>
+                                @else
                                     <div class="image-placeholder">
-                                        <?= htmlspecialchars($product['name']); ?>
+                                        {{ $product['name'] }}
                                     </div>
-                                <?php endif; ?>
+                                @endif
                             </div>
 
                             <div class="product-info">
-                                <h3><?= htmlspecialchars($product['name']); ?></h3>
+                                <h3>{{ $product['name'] }}</h3>
                                 <p class="product-price">
-                                    <?= number_format((float)$product['price'], 0, '.', ' '); ?> грн
+                                    {{ number_format((float)$product['price'], 0, '.', ' ') }} грн
                                 </p>
-                                <a href="index.php?url=product&id=<?= (int)$product['id']; ?>" class="btn btn-small">
+                                <a href="{{ url('/product/' . $product['id']) }}" class="btn btn-small">
                                     Детальніше
                                 </a>
                             </div>
                         </div>
-                    <?php endforeach; ?>
-                <?php else: ?>
+                    @endforeach
+                @else
                     <div class="empty-box">
                         <h3>Поки що немає товарів</h3>
                         <p>Додай товари в базу даних, і вони з’являться тут.</p>
                     </div>
-                <?php endif; ?>
+                @endif
             </div>
         </div>
     </section>
@@ -132,7 +131,7 @@
                         магазин виглядом реально сучасним уже з головної сторінки.
                     </p>
                 </div>
-                <a href="index.php?url=catalog" class="btn btn-dark">До покупок</a>
+                <a href="{{ url('/catalog') }}" class="btn btn-dark">До покупок</a>
             </div>
         </div>
     </section>
