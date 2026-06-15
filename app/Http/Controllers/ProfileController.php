@@ -22,6 +22,41 @@ class ProfileController extends Controller
         return view('profile', compact('user', 'orders'));
     }
 
+    public function uploadAvatar(Request $request)
+    {
+        $request->validate([
+            'avatar' => ['required', 'image', 'mimes:jpg,jpeg,png,webp', 'max:4096'],
+        ], [
+            'avatar.required' => 'Обери зображення',
+            'avatar.image' => 'Файл має бути зображенням',
+            'avatar.mimes' => 'Дозволені jpg, jpeg, png, webp',
+            'avatar.max' => 'Максимальний розмір — 4 МБ',
+        ]);
+
+        $user = Auth::user();
+
+        $dir = public_path('assets/images/avatars');
+        if (! is_dir($dir)) {
+            mkdir($dir, 0777, true);
+        }
+
+        // Видаляємо старий аватар
+        if (! empty($user->avatar)) {
+            $oldPath = $dir . DIRECTORY_SEPARATOR . $user->avatar;
+            if (is_file($oldPath)) {
+                @unlink($oldPath);
+            }
+        }
+
+        $file = $request->file('avatar');
+        $name = 'avatar_' . $user->id . '_' . time() . '.' . strtolower($file->getClientOriginalExtension());
+        $file->move($dir, $name);
+
+        DB::table('users')->where('id', $user->id)->update(['avatar' => $name]);
+
+        return back()->with('avatarSuccess', 'Аватар оновлено');
+    }
+
     public function changePassword(Request $request)
     {
         $request->validate([

@@ -17,6 +17,33 @@
 
     <section class="profile-section">
         <div class="container">
+            @if (session('avatarSuccess'))
+                <div class="alert-success">{{ session('avatarSuccess') }}</div>
+            @endif
+
+            <div class="profile-card profile-avatar-card">
+                <div class="profile-avatar-preview">
+                    @if (! empty($user->avatar))
+                        <img src="{{ asset('assets/images/avatars/' . $user->avatar) }}" alt="avatar">
+                    @else
+                        <span class="user-avatar-initial big">{{ mb_strtoupper(mb_substr($user->username ?? $user->name ?? 'U', 0, 1)) }}</span>
+                    @endif
+                </div>
+
+                <div class="profile-avatar-form">
+                    <h2>Фото профілю</h2>
+                    <p class="admin-help-text">Завантаж аватар — він показуватиметься у шапці сайту. JPG, PNG або WEBP до 4 МБ.</p>
+
+                    <form action="{{ url('/profile/avatar') }}" method="POST" enctype="multipart/form-data">
+                        @csrf
+                        <input type="file" name="avatar" accept=".jpg,.jpeg,.png,.webp" class="admin-hidden-file" id="avatarInput">
+                        <label for="avatarInput" class="btn btn-light">Обрати фото</label>
+                        <button type="submit" class="btn btn-dark">Завантажити</button>
+                        @error('avatar')<small class="form-error" style="display:block;margin-top:8px;">{{ $message }}</small>@enderror
+                    </form>
+                </div>
+            </div>
+
             <div class="profile-grid">
                 <div class="profile-card">
                     <h2>Особисті дані</h2>

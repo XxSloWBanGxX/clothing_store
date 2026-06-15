@@ -33,30 +33,58 @@
 
         <div class="header-actions">
             <form action="{{ url('/catalog') }}" method="GET" class="header-search">
+                <span class="header-search-icon">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="11" cy="11" r="7"></circle>
+                        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                    </svg>
+                </span>
                 <input type="text" name="search" placeholder="Пошук товарів..." value="{{ request('search') }}">
-                <button type="submit" aria-label="Шукати">🔍</button>
+                <button type="submit">Знайти</button>
             </form>
 
-            @auth
-                <a href="{{ url('/profile') }}" class="action-link">Профіль</a>
-            @endauth
-
-            <a href="{{ url('/favorites') }}" class="action-link">
-                Обране <span class="cart-count">{{ $favCount ?? 0 }}</span>
-            </a>
-
-            <a href="{{ url('/cart') }}" class="action-link cart-link">
-                Кошик <span class="cart-count">{{ $cartCount ?? 0 }}</span>
-            </a>
-
-            @auth
-                @if(auth()->user()->role === 'admin')
-                    <a href="{{ url('/admin') }}" class="action-link">Адмін</a>
+            <a href="{{ url('/cart') }}" class="cart-widget" aria-label="Кошик">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="9" cy="21" r="1"></circle>
+                    <circle cx="20" cy="21" r="1"></circle>
+                    <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
+                </svg>
+                @if (($cartCount ?? 0) > 0)
+                    <span class="cart-widget-badge">{{ $cartCount }}</span>
                 @endif
-                <form action="{{ url('/logout') }}" method="POST" class="logout-form">
-                    @csrf
-                    <button type="submit" class="btn btn-outline">Вийти</button>
-                </form>
+            </a>
+
+            @auth
+                @php $authUser = auth()->user(); @endphp
+                <div class="user-menu">
+                    <button type="button" class="user-menu-trigger" id="userMenuBtn">
+                        <span class="user-avatar">
+                            @if (! empty($authUser->avatar))
+                                <img src="{{ asset('assets/images/avatars/' . $authUser->avatar) }}" alt="{{ $authUser->username }}">
+                            @else
+                                <span class="user-avatar-initial">{{ mb_strtoupper(mb_substr($authUser->username ?? $authUser->name ?? 'U', 0, 1)) }}</span>
+                            @endif
+                        </span>
+                        <span class="user-meta">
+                            <strong>{{ $authUser->username ?? '—' }}</strong>
+                            <small>({{ $authUser->name ?? '' }})</small>
+                        </span>
+                        <span class="user-chevron">▾</span>
+                    </button>
+
+                    <div class="user-dropdown" id="userDropdown">
+                        <a href="{{ url('/profile') }}" class="user-dropdown-link">Мій профіль</a>
+                        <a href="{{ url('/favorites') }}" class="user-dropdown-link">Обране</a>
+                        <a href="{{ url('/cart') }}" class="user-dropdown-link">Кошик</a>
+                        @if($authUser->role === 'admin')
+                            <a href="{{ url('/admin') }}" class="user-dropdown-link">Адмін-панель</a>
+                        @endif
+                        <form action="{{ url('/logout') }}" method="POST">
+                            @csrf
+                            <button type="submit" class="user-dropdown-link user-dropdown-logout">Вийти</button>
+                        </form>
+                    </div>
+                </div>
             @else
                 <a href="{{ url('/login') }}" class="btn btn-outline">Увійти</a>
             @endauth
@@ -141,6 +169,25 @@
 </footer>
 
 <script src="{{ asset('assets/js/app.js') }}"></script>
+
+<script>
+    (function () {
+        const btn = document.getElementById('userMenuBtn');
+        const dropdown = document.getElementById('userDropdown');
+        if (!btn || !dropdown) return;
+
+        btn.addEventListener('click', function (e) {
+            e.stopPropagation();
+            dropdown.classList.toggle('open');
+        });
+
+        document.addEventListener('click', function (e) {
+            if (!dropdown.contains(e.target) && !btn.contains(e.target)) {
+                dropdown.classList.remove('open');
+            }
+        });
+    })();
+</script>
 
 </body>
 </html>

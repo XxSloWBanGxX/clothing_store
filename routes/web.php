@@ -36,6 +36,7 @@ Route::post('/favorites/delete-folder', [FavoritesController::class, 'deleteFold
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'index']);
     Route::post('/profile/update', [ProfileController::class, 'updateProfile']);
+    Route::post('/profile/avatar', [ProfileController::class, 'uploadAvatar']);
     Route::post('/profile/password', [ProfileController::class, 'changePassword']);
     Route::get('/profile/order/{id}', [ProfileController::class, 'order']);
     Route::post('/profile/order/{id}/cancel', [ProfileController::class, 'cancelOrder']);
