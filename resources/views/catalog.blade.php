@@ -20,6 +20,12 @@
         </div>
     @endif
 
+    @if (session('stockError'))
+        <div class="container">
+            <div class="alert-error">{{ session('stockError') }}</div>
+        </div>
+    @endif
+
     <section class="catalog-section">
         <div class="container catalog-layout">
             <aside class="catalog-sidebar">
@@ -62,6 +68,34 @@
                         </div>
                     </div>
 
+                    @if (! empty($data['allSizes']))
+                        <div class="filter-group">
+                            <label for="size">Розмір</label>
+                            <select id="size" name="size">
+                                <option value="">Усі розміри</option>
+                                @foreach ($data['allSizes'] as $sizeOption)
+                                    <option value="{{ $sizeOption }}" {{ (($data['filters']['size'] ?? '') === $sizeOption) ? 'selected' : '' }}>
+                                        {{ $sizeOption }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
+                    @endif
+
+                    @if (! empty($data['allColors']))
+                        <div class="filter-group">
+                            <label for="color">Колір</label>
+                            <select id="color" name="color">
+                                <option value="">Усі кольори</option>
+                                @foreach ($data['allColors'] as $colorOption)
+                                    <option value="{{ $colorOption }}" {{ (($data['filters']['color'] ?? '') === $colorOption) ? 'selected' : '' }}>
+                                        {{ $colorOption }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
+                    @endif
+
                     <div class="filter-group">
                         <label for="sort">Сортування</label>
                         <select id="sort" name="sort">
@@ -100,6 +134,9 @@
                             <div class="catalog-card">
                                 <a href="{{ url('/product/' . $product['id']) }}" class="catalog-card-link">
                                     <div class="catalog-card-image">
+                                        @if (! empty($product['old_price']) && (float)$product['old_price'] > (float)$product['price'])
+                                            <span class="sale-badge">SALE</span>
+                                        @endif
                                         @if (!empty($product['image']))
                                             <img
                                                 src="{{ asset('assets/images/products/' . $product['image']) }}"
@@ -119,7 +156,14 @@
 
                                     <div class="catalog-card-info">
                                         <h3>{{ $product['name'] }}</h3>
-                                        <p class="catalog-card-price">{{ number_format((float)$product['price'], 0, '.', ' ') }} грн</p>
+                                        @if (! empty($product['old_price']) && (float)$product['old_price'] > (float)$product['price'])
+                                            <p class="catalog-card-price">
+                                                <span class="price-sale">{{ number_format((float)$product['price'], 0, '.', ' ') }} грн</span>
+                                                <span class="price-old">{{ number_format((float)$product['old_price'], 0, '.', ' ') }} грн</span>
+                                            </p>
+                                        @else
+                                            <p class="catalog-card-price">{{ number_format((float)$product['price'], 0, '.', ' ') }} грн</p>
+                                        @endif
                                         <p class="catalog-stock {{ (int)$product['stock'] > 0 ? 'in-stock' : 'out-of-stock' }}">
                                             {{ (int)$product['stock'] > 0 ? 'Є в наявності' : 'Немає в наявності' }}
                                         </p>
@@ -156,8 +200,9 @@
                         @endforeach
                     </div>
 
-                    {{-- Твою стару пагінацію я поки приховав, бо Laravel зробить її простіше --}}
-                    
+                    @if (isset($data['paginator']) && $data['paginator']->hasPages())
+                        {{ $data['paginator']->onEachSide(1)->links('vendor.pagination.custom') }}
+                    @endif
                 @else
                     <div class="empty-box">
                         <h3>Товарів не знайдено</h3>

@@ -51,6 +51,12 @@
             </div>
 
             <div class="form-group">
+                <label for="old_price">Стара ціна (для знижки)</label>
+                <input type="number" step="0.01" id="old_price" name="old_price" value="{{ old('old_price') }}" placeholder="Необовʼязково">
+                @error('old_price')<small class="form-error">{{ $message }}</small>@enderror
+            </div>
+
+            <div class="form-group">
                 <label for="stock">Кількість</label>
                 <input type="number" id="stock" name="stock" value="{{ old('stock') }}">
                 @error('stock')<small class="form-error">{{ $message }}</small>@enderror

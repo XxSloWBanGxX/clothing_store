@@ -22,12 +22,40 @@ class ProductController extends Controller
         $sizes = json_decode(json_encode(DB::table('product_sizes')->where('product_id', $id)->orderBy('sort_order')->get()), true);
         $colors = json_decode(json_encode(DB::table('product_colors')->where('product_id', $id)->orderBy('sort_order')->get()), true);
 
+        $reviews = [];
+        $avgRating = 0;
+
+        try {
+            $reviews = json_decode(json_encode(
+                DB::table('reviews')->where('product_id', $id)->orderBy('id', 'desc')->get()
+            ), true);
+
+            if (! empty($reviews)) {
+                $avgRating = round(array_sum(array_column($reviews, 'rating')) / count($reviews), 1);
+            }
+        } catch (\Throwable $e) {
+            $reviews = [];
+        }
+
+        // Схожі товари (та сама категорія, крім поточного)
+        $related = json_decode(json_encode(
+            DB::table('products')
+                ->where('category_id', $product['category_id'])
+                ->where('id', '!=', $id)
+                ->orderBy('id', 'desc')
+                ->take(4)
+                ->get()
+        ), true);
+
         // 3. Пакуємо все в один масив $data
         $data = [
             'product' => $product,
             'images'  => $images,
             'sizes'   => $sizes,
             'colors'  => $colors,
+            'reviews' => $reviews,
+            'avgRating' => $avgRating,
+            'related' => $related,
         ];
 
         return view('product', compact('data'));

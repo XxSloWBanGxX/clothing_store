@@ -10,6 +10,8 @@ use App\Http\Controllers\FavoritesController;
 use App\Http\Controllers\NewController;
 use App\Http\Controllers\AboutController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\CheckoutController;
+use App\Http\Controllers\ReviewController;
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\AdminOrderController;
 
@@ -21,6 +23,7 @@ Route::get('/about', [AboutController::class, 'index']);
 
 Route::get('/cart', [CartController::class, 'index']);
 Route::post('/cart/add', [CartController::class, 'add']);
+Route::post('/cart/update', [CartController::class, 'updateQty']);
 Route::post('/cart/remove', [CartController::class, 'remove']);
 
 Route::get('/favorites', [FavoritesController::class, 'index']);
@@ -32,8 +35,16 @@ Route::post('/favorites/delete-folder', [FavoritesController::class, 'deleteFold
 
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'index']);
+    Route::post('/profile/update', [ProfileController::class, 'updateProfile']);
     Route::post('/profile/password', [ProfileController::class, 'changePassword']);
     Route::get('/profile/order/{id}', [ProfileController::class, 'order']);
+    Route::post('/profile/order/{id}/cancel', [ProfileController::class, 'cancelOrder']);
+
+    Route::get('/checkout', [CheckoutController::class, 'index']);
+    Route::post('/checkout', [CheckoutController::class, 'store']);
+    Route::get('/checkout/success/{id}', [CheckoutController::class, 'success']);
+
+    Route::post('/product/{id}/review', [ReviewController::class, 'store']);
 });
 
 Route::middleware('guest')->group(function () {
@@ -54,6 +65,10 @@ Route::middleware('admin')->prefix('admin')->group(function () {
     Route::get('/products/{id}/edit', [AdminController::class, 'edit']);
     Route::put('/products/{id}', [AdminController::class, 'update']);
     Route::delete('/products/{id}', [AdminController::class, 'destroy']);
+
+    Route::get('/categories', [AdminController::class, 'categories']);
+    Route::post('/categories', [AdminController::class, 'storeCategory']);
+    Route::delete('/categories/{id}', [AdminController::class, 'destroyCategory']);
 
     Route::get('/users', [AdminController::class, 'users']);
     Route::get('/users/create', [AdminController::class, 'createUser']);

@@ -111,9 +111,20 @@
 
                         <h1 class="product-market-title">{{ $product['name'] }}</h1>
 
+                        @if (session('success'))
+                            <div class="alert-success">{{ session('success') }}</div>
+                        @endif
+                        @if (session('stockError'))
+                            <div class="alert-error">{{ session('stockError') }}</div>
+                        @endif
+
                         <div class="product-price-box">
                             <div class="product-price-main">
                                 {{ number_format((float)$product['price'], 0, '.', ' ') }} грн
+                                @if (! empty($product['old_price']) && (float)$product['old_price'] > (float)$product['price'])
+                                    <span class="price-old">{{ number_format((float)$product['old_price'], 0, '.', ' ') }} грн</span>
+                                    <span class="sale-badge">SALE</span>
+                                @endif
                             </div>
                             <div class="product-price-note">Ціна для онлайн-замовлення</div>
                         </div>
@@ -169,6 +180,17 @@
                                             <span class="product-color-name">{{ $color['color_name'] }}</span>
                                         </button>
                                         @endforeach
+                                    </div>
+                                </div>
+                            @endif
+
+                            @if ((int)$product['stock'] > 0)
+                                <div class="product-qty-box">
+                                    <span class="product-qty-label">Кількість</span>
+                                    <div class="product-qty-control">
+                                        <button type="button" class="product-qty-btn" id="qtyMinus">−</button>
+                                        <input type="number" name="quantity" id="qtyInput" value="1" min="1" max="{{ (int)$product['stock'] }}" readonly>
+                                        <button type="button" class="product-qty-btn" id="qtyPlus">+</button>
                                     </div>
                                 </div>
                             @endif
@@ -237,14 +259,124 @@
 
                     <section class="product-tab-panel" data-panel="reviews">
                         <div class="product-tab-card">
-                            <h2>Відгуки та питання</h2>
-                            <div class="product-reviews-empty">
-                                Поки що відгуків немає. Цей блок уже готовий під майбутню систему коментарів.
+                            @php
+                                $reviews = $data['reviews'] ?? [];
+                                $avgRating = $data['avgRating'] ?? 0;
+                            @endphp
+
+                            <div class="product-reviews-head">
+                                <h2>Відгуки</h2>
+                                @if (! empty($reviews))
+                                    <div class="product-reviews-rating">
+                                        <span class="reviews-stars">{!! str_repeat('★', (int) round($avgRating)) . str_repeat('☆', 5 - (int) round($avgRating)) !!}</span>
+                                        <span>{{ $avgRating }} / 5 ({{ count($reviews) }})</span>
+                                    </div>
+                                @endif
                             </div>
+
+                            @if (session('reviewSuccess'))
+                                <div class="alert-success">{{ session('reviewSuccess') }}</div>
+                            @endif
+
+                            @if (! empty($reviews))
+                                <div class="product-reviews-list">
+                                    @foreach ($reviews as $review)
+                                        <div class="product-review-item">
+                                            <div class="product-review-top">
+                                                <strong>{{ $review['author_name'] }}</strong>
+                                                <span class="reviews-stars">{!! str_repeat('★', (int) $review['rating']) . str_repeat('☆', 5 - (int) $review['rating']) !!}</span>
+                                            </div>
+                                            <p>{{ $review['comment'] }}</p>
+                                            <small class="product-review-date">{{ $review['created_at'] }}</small>
+                                        </div>
+                                    @endforeach
+                                </div>
+                            @else
+                                <div class="product-reviews-empty">
+                                    Поки що відгуків немає. Стань першим, хто залишить відгук!
+                                </div>
+                            @endif
+
+                            @auth
+                                <form action="{{ url('/product/' . $product['id'] . '/review') }}" method="POST" class="product-review-form">
+                                    @csrf
+                                    <h3>Залишити відгук</h3>
+
+                                    <div class="form-group">
+                                        <label for="rating">Оцінка</label>
+                                        <select id="rating" name="rating">
+                                            <option value="5">5 — Відмінно</option>
+                                            <option value="4">4 — Добре</option>
+                                            <option value="3">3 — Нормально</option>
+                                            <option value="2">2 — Погано</option>
+                                            <option value="1">1 — Жахливо</option>
+                                        </select>
+                                        @error('rating')<small class="form-error">{{ $message }}</small>@enderror
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label for="comment">Відгук</label>
+                                        <textarea id="comment" name="comment" rows="4" placeholder="Поділись враженнями про товар">{{ old('comment') }}</textarea>
+                                        @error('comment')<small class="form-error">{{ $message }}</small>@enderror
+                                    </div>
+
+                                    <button type="submit" class="btn btn-dark">Надіслати відгук</button>
+                                </form>
+                            @else
+                                <p class="product-reviews-login">
+                                    <a href="{{ url('/login') }}">Увійди</a>, щоб залишити відгук.
+                                </p>
+                            @endauth
                         </div>
                     </section>
                 </div>
             </div>
+            @if (! empty($data['related']))
+                <div class="related-section">
+                    <div class="section-head">
+                        <div>
+                            <span class="section-label">RELATED</span>
+                            <h2>Схожі товари</h2>
+                        </div>
+                    </div>
+
+                    <div class="catalog-grid">
+                        @foreach ($data['related'] as $rel)
+                            <div class="catalog-card">
+                                <a href="{{ url('/product/' . (int) $rel['id']) }}" class="catalog-card-link">
+                                    <div class="catalog-card-image">
+                                        @if (! empty($rel['old_price']) && (float)$rel['old_price'] > (float)$rel['price'])
+                                            <span class="sale-badge">SALE</span>
+                                        @endif
+                                        @if (! empty($rel['image']))
+                                            <img
+                                                src="{{ asset('assets/images/products/' . $rel['image']) }}"
+                                                alt="{{ $rel['name'] }}"
+                                                class="catalog-product-image"
+                                                onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';"
+                                            >
+                                            <div class="product-image-placeholder image-fallback" style="display:none;">{{ $rel['name'] }}</div>
+                                        @else
+                                            <div class="product-image-placeholder">{{ $rel['name'] }}</div>
+                                        @endif
+                                    </div>
+                                    <div class="catalog-card-info">
+                                        <h3>{{ $rel['name'] }}</h3>
+                                        @if (! empty($rel['old_price']) && (float)$rel['old_price'] > (float)$rel['price'])
+                                            <p class="catalog-card-price">
+                                                <span class="price-sale">{{ number_format((float)$rel['price'], 0, '.', ' ') }} грн</span>
+                                                <span class="price-old">{{ number_format((float)$rel['old_price'], 0, '.', ' ') }} грн</span>
+                                            </p>
+                                        @else
+                                            <p class="catalog-card-price">{{ number_format((float)$rel['price'], 0, '.', ' ') }} грн</p>
+                                        @endif
+                                    </div>
+                                </a>
+                            </div>
+                        @endforeach
+                    </div>
+                </div>
+            @endif
         </div>
     </section>
 </main>
@@ -254,5 +386,25 @@
     document.querySelectorAll('.product-color-dot[data-color]').forEach(element => {
         element.style.background = element.dataset.color;
     });
+
+    // Quantity control
+    (function () {
+        const input = document.getElementById('qtyInput');
+        const minus = document.getElementById('qtyMinus');
+        const plus = document.getElementById('qtyPlus');
+        if (!input) return;
+
+        const max = parseInt(input.getAttribute('max')) || 99;
+
+        minus?.addEventListener('click', function () {
+            let v = parseInt(input.value) || 1;
+            if (v > 1) input.value = v - 1;
+        });
+
+        plus?.addEventListener('click', function () {
+            let v = parseInt(input.value) || 1;
+            if (v < max) input.value = v + 1;
+        });
+    })();
 </script>
 @endsection

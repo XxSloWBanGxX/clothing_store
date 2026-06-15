@@ -20,28 +20,40 @@
             <div class="profile-grid">
                 <div class="profile-card">
                     <h2>Особисті дані</h2>
-                    <div class="profile-info-list">
-                        <div class="profile-info-item">
-                            <span>Ім’я</span>
-                            <strong>{{ $user->name ?? '—' }}</strong>
+
+                    @if (session('profileSuccess'))
+                        <div class="profile-success-message">{{ session('profileSuccess') }}</div>
+                    @endif
+
+                    <form action="{{ url('/profile/update') }}" method="POST" class="profile-password-form">
+                        @csrf
+
+                        <div class="form-group">
+                            <label for="name">Імʼя</label>
+                            <input type="text" id="name" name="name" value="{{ old('name', $user->name) }}">
+                            @error('name')<small class="form-error">{{ $message }}</small>@enderror
                         </div>
-                        <div class="profile-info-item">
-                            <span>Username</span>
-                            <strong>{{ $user->username ?? '—' }}</strong>
+
+                        <div class="form-group">
+                            <label for="username">Username</label>
+                            <input type="text" id="username" name="username" value="{{ old('username', $user->username) }}">
+                            @error('username')<small class="form-error">{{ $message }}</small>@enderror
                         </div>
-                        <div class="profile-info-item">
-                            <span>Email</span>
-                            <strong>{{ $user->email ?? '—' }}</strong>
+
+                        <div class="form-group">
+                            <label for="email">Email</label>
+                            <input type="email" id="email" name="email" value="{{ old('email', $user->email) }}">
+                            @error('email')<small class="form-error">{{ $message }}</small>@enderror
                         </div>
-                        <div class="profile-info-item">
-                            <span>Телефон</span>
-                            <strong>{{ $user->phone ?? '—' }}</strong>
+
+                        <div class="form-group">
+                            <label for="phone">Телефон</label>
+                            <input type="text" id="phone" name="phone" value="{{ old('phone', $user->phone) }}">
+                            @error('phone')<small class="form-error">{{ $message }}</small>@enderror
                         </div>
-                        <div class="profile-info-item">
-                            <span>Роль</span>
-                            <strong>{{ $user->role ?? 'user' }}</strong>
-                        </div>
-                    </div>
+
+                        <button type="submit" class="btn btn-dark profile-password-btn">Зберегти дані</button>
+                    </form>
                 </div>
 
                 <div class="profile-card">

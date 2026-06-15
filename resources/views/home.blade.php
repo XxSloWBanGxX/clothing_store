@@ -63,6 +63,43 @@
         </div>
     </section>
 
+    @if (! empty($data['categories']) && count($data['categories']) > 0)
+        <section class="categories-section">
+            <div class="container">
+                <div class="section-head">
+                    <div>
+                        <span class="section-label">CATEGORIES</span>
+                        <h2>Категорії</h2>
+                    </div>
+                    <a href="{{ url('/catalog') }}" class="section-link">Усі товари</a>
+                </div>
+
+                <div class="categories-grid">
+                    @foreach ($data['categories'] as $category)
+                        <a href="{{ url('/catalog?category=' . $category->slug) }}" class="category-card">
+                            <div class="category-card-image">
+                                @if (! empty($category->sample_image))
+                                    <img
+                                        src="{{ asset('assets/images/products/' . $category->sample_image) }}"
+                                        alt="{{ $category->name }}"
+                                        onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';"
+                                    >
+                                    <div class="image-placeholder" style="display:none;">{{ $category->name }}</div>
+                                @else
+                                    <div class="image-placeholder">{{ $category->name }}</div>
+                                @endif
+                            </div>
+                            <div class="category-card-info">
+                                <h3>{{ $category->name }}</h3>
+                                <span>{{ (int) $category->products_count }} товарів</span>
+                            </div>
+                        </a>
+                    @endforeach
+                </div>
+            </div>
+        </section>
+    @endif
+
     <section class="products-section">
         <div class="container">
             <div class="section-head">
@@ -101,9 +138,16 @@
 
                             <div class="product-info">
                                 <h3>{{ $product['name'] }}</h3>
-                                <p class="product-price">
-                                    {{ number_format((float)$product['price'], 0, '.', ' ') }} грн
-                                </p>
+                                @if (! empty($product['old_price']) && (float)$product['old_price'] > (float)$product['price'])
+                                    <p class="product-price">
+                                        <span class="price-sale">{{ number_format((float)$product['price'], 0, '.', ' ') }} грн</span>
+                                        <span class="price-old">{{ number_format((float)$product['old_price'], 0, '.', ' ') }} грн</span>
+                                    </p>
+                                @else
+                                    <p class="product-price">
+                                        {{ number_format((float)$product['price'], 0, '.', ' ') }} грн
+                                    </p>
+                                @endif
                                 <a href="{{ url('/product/' . $product['id']) }}" class="btn btn-small">
                                     Детальніше
                                 </a>

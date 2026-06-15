@@ -14,24 +14,39 @@
 
         <nav class="main-nav">
             <a href="{{ url('/') }}" class="nav-link">Головна</a>
-            <a href="{{ url('/catalog') }}" class="nav-link">Каталог</a>
+
+            <div class="nav-dropdown">
+                <a href="{{ url('/catalog') }}" class="nav-link">Каталог ▾</a>
+                @if (! empty($navCategories) && count($navCategories) > 0)
+                    <div class="nav-dropdown-menu">
+                        <a href="{{ url('/catalog') }}" class="nav-dropdown-link">Усі товари</a>
+                        @foreach ($navCategories as $cat)
+                            <a href="{{ url('/catalog?category=' . $cat->slug) }}" class="nav-dropdown-link">{{ $cat->name }}</a>
+                        @endforeach
+                    </div>
+                @endif
+            </div>
+
             <a href="{{ url('/new') }}" class="nav-link">Новинки</a>
             <a href="{{ url('/about') }}" class="nav-link">Про нас</a>
         </nav>
 
         <div class="header-actions">
-            <a href="{{ url('/catalog') }}" class="action-link">Пошук</a>
+            <form action="{{ url('/catalog') }}" method="GET" class="header-search">
+                <input type="text" name="search" placeholder="Пошук товарів..." value="{{ request('search') }}">
+                <button type="submit" aria-label="Шукати">🔍</button>
+            </form>
 
             @auth
                 <a href="{{ url('/profile') }}" class="action-link">Профіль</a>
             @endauth
 
             <a href="{{ url('/favorites') }}" class="action-link">
-                Обране <span class="cart-count">0</span>
+                Обране <span class="cart-count">{{ $favCount ?? 0 }}</span>
             </a>
 
             <a href="{{ url('/cart') }}" class="action-link cart-link">
-                Кошик <span class="cart-count">0</span>
+                Кошик <span class="cart-count">{{ $cartCount ?? 0 }}</span>
             </a>
 
             @auth
@@ -57,6 +72,11 @@
     <div class="mobile-menu" id="mobileMenu">
         <a href="{{ url('/') }}" class="mobile-link">Головна</a>
         <a href="{{ url('/catalog') }}" class="mobile-link">Каталог</a>
+        @if (! empty($navCategories))
+            @foreach ($navCategories as $cat)
+                <a href="{{ url('/catalog?category=' . $cat->slug) }}" class="mobile-link mobile-sublink">— {{ $cat->name }}</a>
+            @endforeach
+        @endif
         <a href="{{ url('/new') }}" class="mobile-link">Новинки</a>
         <a href="{{ url('/about') }}" class="mobile-link">Про нас</a>
         <a href="{{ url('/favorites') }}" class="mobile-link">Обране</a>

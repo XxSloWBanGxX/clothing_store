@@ -22,6 +22,7 @@
             <a href="{{ url('/admin/orders') }}" class="admin-nav-link {{ request()->is('admin/orders*') ? 'active' : '' }}">Замовлення</a>
             <a href="{{ url('/admin/products') }}" class="admin-nav-link {{ request()->is('admin/products') ? 'active' : '' }}">Товари</a>
             <a href="{{ url('/admin/products/create') }}" class="admin-nav-link {{ request()->is('admin/products/create') ? 'active' : '' }}">Додати товар</a>
+            <a href="{{ url('/admin/categories') }}" class="admin-nav-link {{ request()->is('admin/categories*') ? 'active' : '' }}">Категорії</a>
             <a href="{{ url('/admin/users') }}" class="admin-nav-link {{ request()->is('admin/users') ? 'active' : '' }}">Користувачі</a>
             <a href="{{ url('/admin/users/create') }}" class="admin-nav-link {{ request()->is('admin/users/create') ? 'active' : '' }}">Створити користувача</a>
             <a href="{{ url('/') }}" class="admin-nav-link">На сайт</a>

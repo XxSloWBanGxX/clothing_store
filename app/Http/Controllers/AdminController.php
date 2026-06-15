@@ -138,6 +138,7 @@ class AdminController extends Controller
             'category_id' => ['required', 'integer', Rule::exists('categories', 'id')],
             'description' => ['required', 'string'],
             'price' => ['required', 'numeric', 'min:0'],
+            'old_price' => ['nullable', 'numeric', 'min:0'],
             'stock' => ['required', 'integer', 'min:0'],
             'main_image' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp'],
             'gallery_images.*' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp'],
@@ -157,6 +158,7 @@ class AdminController extends Controller
             'slug' => $slug,
             'description' => $validated['description'],
             'price' => $validated['price'],
+            'old_price' => $validated['old_price'] ?? null,
             'image' => $mainImage,
             'stock' => (int) $validated['stock'],
             'is_featured' => $request->boolean('is_featured') ? 1 : 0,
@@ -199,6 +201,7 @@ class AdminController extends Controller
             'category_id' => ['required', 'integer', Rule::exists('categories', 'id')],
             'description' => ['required', 'string'],
             'price' => ['required', 'numeric', 'min:0'],
+            'old_price' => ['nullable', 'numeric', 'min:0'],
             'stock' => ['required', 'integer', 'min:0'],
             'main_image' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp'],
             'gallery_images.*' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp'],
@@ -223,6 +226,7 @@ class AdminController extends Controller
             'slug' => $slug,
             'description' => $validated['description'],
             'price' => $validated['price'],
+            'old_price' => $validated['old_price'] ?? null,
             'image' => $mainImageToSave,
             'stock' => (int) $validated['stock'],
             'is_featured' => $request->boolean('is_featured') ? 1 : 0,
@@ -355,6 +359,54 @@ class AdminController extends Controller
             'gallery_images.*.image' => 'Фото галереї мають бути зображеннями',
             'gallery_images.*.mimes' => 'У галереї дозволені тільки jpg, jpeg, png, webp',
         ];
+    }
+
+    public function categories()
+    {
+        $categories = DB::table('categories')
+            ->leftJoin('products', 'products.category_id', '=', 'categories.id')
+            ->select('categories.*', DB::raw('COUNT(products.id) as products_count'))
+            ->groupBy('categories.id', 'categories.name', 'categories.slug', 'categories.created_at')
+            ->orderBy('categories.name')
+            ->get();
+
+        return view('admin.categories', compact('categories'));
+    }
+
+    public function storeCategory(Request $request)
+    {
+        $validated = $request->validate([
+            'name' => ['required', 'string', 'max:100'],
+        ], [
+            'name.required' => 'Введи назву категорії',
+        ]);
+
+        $slug = $this->makeSlug($request->input('slug') ?: $validated['name']);
+
+        if (DB::table('categories')->where('slug', $slug)->exists()) {
+            return back()->withInput()->withErrors(['slug' => 'Категорія з таким slug вже існує']);
+        }
+
+        DB::table('categories')->insert([
+            'name' => $validated['name'],
+            'slug' => $slug,
+            'created_at' => now(),
+        ]);
+
+        return redirect('/admin/categories')->with('status', 'Категорію створено');
+    }
+
+    public function destroyCategory($id)
+    {
+        $count = DB::table('products')->where('category_id', $id)->count();
+
+        if ($count > 0) {
+            return back()->withErrors(['delete' => "Не можна видалити: у категорії {$count} товар(ів)"]);
+        }
+
+        DB::table('categories')->where('id', $id)->delete();
+
+        return redirect('/admin/categories')->with('status', 'Категорію видалено');
     }
 
     public function users()

@@ -131,7 +131,13 @@
                                 <h3>{{ $product['name'] }}</h3>
                                 <p class="new-product-category">{{ $product['category_name'] ?? 'Одяг' }}</p>
                                 <div class="new-product-bottom">
-                                    <strong>{{ number_format((float)$product['price'], 0, '.', ' ') }} грн</strong>
+                                    @if (! empty($product['old_price']) && (float)$product['old_price'] > (float)$product['price'])
+                                        <strong class="price-sale">{{ number_format((float)$product['price'], 0, '.', ' ') }} грн
+                                            <span class="price-old">{{ number_format((float)$product['old_price'], 0, '.', ' ') }} грн</span>
+                                        </strong>
+                                    @else
+                                        <strong>{{ number_format((float)$product['price'], 0, '.', ' ') }} грн</strong>
+                                    @endif
                                     <span class="new-product-arrow">→</span>
                                 </div>
                             </div>

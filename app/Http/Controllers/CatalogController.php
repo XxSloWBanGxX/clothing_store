@@ -15,6 +15,8 @@ class CatalogController extends Controller
         $maxPrice = trim((string) $request->query('max_price', ''));
         $sort = trim((string) $request->query('sort', 'newest'));
         $inStock = $request->query('in_stock') ? 1 : 0;
+        $size = trim((string) $request->query('size', ''));
+        $color = trim((string) $request->query('color', ''));
 
         $query = DB::table('products')
             ->join('categories', 'categories.id', '=', 'products.category_id')
@@ -40,6 +42,18 @@ class CatalogController extends Controller
             $query->where('products.stock', '>', 0);
         }
 
+        if ($size !== '') {
+            $query->whereIn('products.id', function ($q) use ($size) {
+                $q->select('product_id')->from('product_sizes')->where('size_label', $size);
+            });
+        }
+
+        if ($color !== '') {
+            $query->whereIn('products.id', function ($q) use ($color) {
+                $q->select('product_id')->from('product_colors')->where('color_name', $color);
+            });
+        }
+
         switch ($sort) {
             case 'price_asc':
                 $query->orderBy('products.price', 'asc');
@@ -55,14 +69,20 @@ class CatalogController extends Controller
                 break;
         }
 
-        $products = json_decode(json_encode($query->get()), true);
+        $paginator = $query->paginate(12)->withQueryString();
+        $products = json_decode(json_encode($paginator->items()), true);
+
         $categories = json_decode(json_encode(DB::table('categories')->orderBy('name')->get()), true);
+        $allSizes = DB::table('product_sizes')->distinct()->orderBy('size_label')->pluck('size_label')->toArray();
+        $allColors = DB::table('product_colors')->distinct()->orderBy('color_name')->pluck('color_name')->toArray();
 
         $favoriteFolders = array_keys(session('favorite_folders', ['Обране' => []]));
 
         $data = [
             'products' => $products,
             'categories' => $categories,
+            'allSizes' => $allSizes,
+            'allColors' => $allColors,
             'filters' => [
                 'category' => $category,
                 'search' => $search,
@@ -70,9 +90,12 @@ class CatalogController extends Controller
                 'max_price' => $maxPrice,
                 'sort' => $sort,
                 'in_stock' => $inStock,
+                'size' => $size,
+                'color' => $color,
             ],
-            'totalProducts' => count($products),
+            'totalProducts' => $paginator->total(),
             'favoriteFolders' => $favoriteFolders,
+            'paginator' => $paginator,
         ];
 
         return view('catalog', compact('data'));

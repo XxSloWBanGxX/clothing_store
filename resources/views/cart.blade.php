@@ -21,6 +21,10 @@
                 <div class="alert-success">{{ session('success') }}</div>
             @endif
 
+            @if (session('stockError'))
+                <div class="alert-error">{{ session('stockError') }}</div>
+            @endif
+
             @if (empty($cartItems))
                 <div class="empty-box">
                     <h3>Кошик порожній</h3>
@@ -47,15 +51,39 @@
 
                                 <div class="cart-item-info">
                                     <h3>{{ $item['name'] }}</h3>
-                                    <p>{{ number_format((float) $item['price'], 0, '.', ' ') }} грн × {{ (int) $item['quantity'] }}</p>
-                                    <strong>{{ number_format((float) $item['subtotal'], 0, '.', ' ') }} грн</strong>
+                                    @if (! empty($item['selected_size']) || ! empty($item['selected_color_name']))
+                                        <p class="cart-item-meta">
+                                            @if (! empty($item['selected_size'])) Розмір: {{ $item['selected_size'] }} @endif
+                                            @if (! empty($item['selected_color_name'])) · Колір: {{ $item['selected_color_name'] }} @endif
+                                        </p>
+                                    @endif
+                                    <p>{{ number_format((float) $item['price'], 0, '.', ' ') }} грн</p>
+
+                                    <div class="cart-qty">
+                                        <form action="{{ url('/cart/update') }}" method="POST">
+                                            @csrf
+                                            <input type="hidden" name="product_id" value="{{ (int) $item['id'] }}">
+                                            <input type="hidden" name="action" value="decrease">
+                                            <button type="submit" class="cart-qty-btn">−</button>
+                                        </form>
+                                        <span class="cart-qty-value">{{ (int) $item['quantity'] }}</span>
+                                        <form action="{{ url('/cart/update') }}" method="POST">
+                                            @csrf
+                                            <input type="hidden" name="product_id" value="{{ (int) $item['id'] }}">
+                                            <input type="hidden" name="action" value="increase">
+                                            <button type="submit" class="cart-qty-btn">+</button>
+                                        </form>
+                                    </div>
                                 </div>
 
-                                <form action="{{ url('/cart/remove') }}" method="POST" class="cart-item-remove">
-                                    @csrf
-                                    <input type="hidden" name="product_id" value="{{ (int) $item['id'] }}">
-                                    <button type="submit" class="btn btn-light btn-sm">Видалити</button>
-                                </form>
+                                <div class="cart-item-side">
+                                    <strong class="cart-item-subtotal">{{ number_format((float) $item['subtotal'], 0, '.', ' ') }} грн</strong>
+                                    <form action="{{ url('/cart/remove') }}" method="POST">
+                                        @csrf
+                                        <input type="hidden" name="product_id" value="{{ (int) $item['id'] }}">
+                                        <button type="submit" class="btn btn-light btn-sm">Видалити</button>
+                                    </form>
+                                </div>
                             </div>
                         @endforeach
                     </div>
@@ -66,7 +94,14 @@
                             <span>До сплати</span>
                             <strong>{{ number_format((float) $total, 0, '.', ' ') }} грн</strong>
                         </div>
-                        <a href="{{ url('/catalog') }}" class="btn btn-light" style="width:100%;">Продовжити покупки</a>
+
+                        @auth
+                            <a href="{{ url('/checkout') }}" class="btn btn-dark" style="width:100%;">Оформити замовлення</a>
+                        @else
+                            <a href="{{ url('/login') }}" class="btn btn-dark" style="width:100%;">Увійти для замовлення</a>
+                        @endauth
+
+                        <a href="{{ url('/catalog') }}" class="btn btn-light" style="width:100%; margin-top:10px;">Продовжити покупки</a>
                     </aside>
                 </div>
             @endif

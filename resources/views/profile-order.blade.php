@@ -17,6 +17,13 @@
 
     <section class="profile-section">
         <div class="container">
+            @if (session('orderSuccess'))
+                <div class="alert-success">{{ session('orderSuccess') }}</div>
+            @endif
+            @if (session('orderError'))
+                <div class="alert-error">{{ session('orderError') }}</div>
+            @endif
+
             <div class="profile-grid">
                 <div class="profile-card">
                     <h2>Інформація про доставку</h2>
@@ -106,8 +113,15 @@
                     </table>
                 </div>
 
-                <div style="margin-top: 24px;">
+                <div style="margin-top: 24px; display: flex; gap: 12px; flex-wrap: wrap;">
                     <a href="{{ url('/profile') }}" class="btn btn-light">Назад до профілю</a>
+
+                    @if (in_array($order->status, ['new', 'processing'], true))
+                        <form action="{{ url('/profile/order/' . $order->id . '/cancel') }}" method="POST" onsubmit="return confirm('Скасувати це замовлення?');">
+                            @csrf
+                            <button type="submit" class="btn btn-dark">Скасувати замовлення</button>
+                        </form>
+                    @endif
                 </div>
             </div>
         </div>
