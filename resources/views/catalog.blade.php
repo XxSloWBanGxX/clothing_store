@@ -14,6 +14,12 @@
         </div>
     </section>
 
+    @if (session('success'))
+        <div class="container">
+            <div class="alert-success">{{ session('success') }}</div>
+        </div>
+    @endif
+
     <section class="catalog-section">
         <div class="container catalog-layout">
             <aside class="catalog-sidebar">

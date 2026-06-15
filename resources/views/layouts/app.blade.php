@@ -38,7 +38,10 @@
                 @if(auth()->user()->role === 'admin')
                     <a href="{{ url('/admin') }}" class="action-link">Адмін</a>
                 @endif
-                <a href="{{ url('/logout') }}" class="btn btn-outline">Вийти</a>
+                <form action="{{ url('/logout') }}" method="POST" class="logout-form">
+                    @csrf
+                    <button type="submit" class="btn btn-outline">Вийти</button>
+                </form>
             @else
                 <a href="{{ url('/login') }}" class="btn btn-outline">Увійти</a>
             @endauth
@@ -63,9 +66,13 @@
             @if(auth()->user()->role === 'admin')
                 <a href="{{ url('/admin') }}" class="mobile-link">Адмін</a>
             @endif
-            <a href="{{ url('/logout') }}" class="mobile-link">Вийти</a>
+            <form action="{{ url('/logout') }}" method="POST" class="mobile-logout-form">
+                @csrf
+                <button type="submit" class="mobile-link mobile-logout-btn">Вийти</button>
+            </form>
         @else
             <a href="{{ url('/login') }}" class="mobile-link">Увійти</a>
+            <a href="{{ url('/register') }}" class="mobile-link">Реєстрація</a>
         @endauth
     </div>
 </header>
@@ -92,7 +99,10 @@
             <a href="{{ url('/profile') }}">Профіль</a>
             <a href="{{ url('/favorites') }}">Обране</a>
             <a href="{{ url('/cart') }}">Кошик</a>
-            <a href="{{ url('/login') }}">Увійти</a>
+            @guest
+                <a href="{{ url('/login') }}">Увійти</a>
+                <a href="{{ url('/register') }}">Реєстрація</a>
+            @endguest
         </div>
 
         <div class="footer-column">

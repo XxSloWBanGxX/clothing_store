@@ -98,6 +98,27 @@ textarea {
     gap: 14px;
 }
 
+.logout-form {
+    display: inline-flex;
+    margin: 0;
+}
+
+.mobile-logout-form {
+    display: block;
+    width: 100%;
+}
+
+.mobile-logout-btn {
+    display: block;
+    width: 100%;
+    background: none;
+    border: none;
+    text-align: left;
+    cursor: pointer;
+    font: inherit;
+    padding: 0;
+}
+
 .action-link {
     color: var(--text);
     font-size: 0.95rem;
@@ -582,6 +603,15 @@ textarea {
     background: #fff1f0;
     color: #c62828;
     border: 1px solid #ffd3cf;
+}
+
+.alert-success {
+    margin-bottom: 18px;
+    padding: 14px 16px;
+    border-radius: 14px;
+    background: #effaf1;
+    color: #1b7a3d;
+    border: 1px solid #c8ecd2;
 }
 
 .auth-btn {

@@ -11,4 +11,15 @@ class Product extends Model
     
     // Вимикаємо стандартні ларавелівські поля часу, бо у старій базі їх немає
     public $timestamps = false;
+
+    protected $fillable = [
+        'category_id',
+        'name',
+        'slug',
+        'description',
+        'price',
+        'image',
+        'stock',
+        'is_featured',
+    ];
 }

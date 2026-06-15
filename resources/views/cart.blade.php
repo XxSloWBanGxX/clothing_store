@@ -1,30 +1,77 @@
 @extends('layouts.app')
 
+@section('title', 'Кошик - CLOTHSTORE')
+
 @section('content')
-<main class="container" style="padding: 60px 0;">
-    <h1>Ваш кошик</h1>
-    
-    @if(empty($cartItems))
-        <p>Кошик порожній.</p>
-    @else
-        <div class="product-market-layout" style="display: flex; gap: 40px;">
-            <div style="flex: 2;">
-                @foreach($cartItems as $item)
-                    <div style="display: flex; align-items: center; padding: 20px; border-bottom: 1px solid #eee;">
-                        <img src="{{ asset('assets/images/products/' . $item['image']) }}" width="80" alt="{{ $item['name'] }}">
-                        <div style="margin-left: 20px;">
-                            <h3>{{ $item['name'] }}</h3>
-                            <p>{{ $item['price'] }} грн x {{ $item['quantity'] }} = {{ $item['subtotal'] }} грн</p>
-                        </div>
-                    </div>
-                @endforeach
-            </div>
-            
-            <div style="flex: 1; padding: 30px; background: #f9fafb; border-radius: 24px;">
-                <h3>Разом: {{ $total }} грн</h3>
-                <button class="btn btn-dark" style="width: 100%;">Оформити замовлення</button>
+
+<main class="cart-page">
+    <section class="catalog-hero">
+        <div class="container">
+            <div class="catalog-hero-box">
+                <span class="hero-badge">CART</span>
+                <h1>Кошик</h1>
+                <p>Перевір вибрані товари перед оформленням замовлення.</p>
             </div>
         </div>
-    @endif
+    </section>
+
+    <section class="cart-section">
+        <div class="container">
+            @if (session('success'))
+                <div class="alert-success">{{ session('success') }}</div>
+            @endif
+
+            @if (empty($cartItems))
+                <div class="empty-box">
+                    <h3>Кошик порожній</h3>
+                    <p>Додай товари з каталогу, щоб оформити замовлення.</p>
+                    <a href="{{ url('/catalog') }}" class="btn btn-dark">Перейти в каталог</a>
+                </div>
+            @else
+                <div class="cart-layout">
+                    <div class="cart-items">
+                        @foreach ($cartItems as $item)
+                            <div class="cart-item">
+                                <div class="cart-item-image">
+                                    @if (! empty($item['image']))
+                                        <img
+                                            src="{{ asset('assets/images/products/' . $item['image']) }}"
+                                            alt="{{ $item['name'] }}"
+                                            onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';"
+                                        >
+                                        <div class="product-image-placeholder" style="display:none;">{{ $item['name'] }}</div>
+                                    @else
+                                        <div class="product-image-placeholder">{{ $item['name'] }}</div>
+                                    @endif
+                                </div>
+
+                                <div class="cart-item-info">
+                                    <h3>{{ $item['name'] }}</h3>
+                                    <p>{{ number_format((float) $item['price'], 0, '.', ' ') }} грн × {{ (int) $item['quantity'] }}</p>
+                                    <strong>{{ number_format((float) $item['subtotal'], 0, '.', ' ') }} грн</strong>
+                                </div>
+
+                                <form action="{{ url('/cart/remove') }}" method="POST" class="cart-item-remove">
+                                    @csrf
+                                    <input type="hidden" name="product_id" value="{{ (int) $item['id'] }}">
+                                    <button type="submit" class="btn btn-light btn-sm">Видалити</button>
+                                </form>
+                            </div>
+                        @endforeach
+                    </div>
+
+                    <aside class="cart-summary">
+                        <h3>Разом</h3>
+                        <div class="cart-summary-total">
+                            <span>До сплати</span>
+                            <strong>{{ number_format((float) $total, 0, '.', ' ') }} грн</strong>
+                        </div>
+                        <a href="{{ url('/catalog') }}" class="btn btn-light" style="width:100%;">Продовжити покупки</a>
+                    </aside>
+                </div>
+            @endif
+        </div>
+    </section>
 </main>
+
 @endsection
