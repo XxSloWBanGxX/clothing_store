@@ -25,6 +25,7 @@
             <a href="{{ url('/admin/categories') }}" class="admin-nav-link {{ request()->is('admin/categories*') ? 'active' : '' }}">Категорії</a>
             <a href="{{ url('/admin/users') }}" class="admin-nav-link {{ request()->is('admin/users') ? 'active' : '' }}">Користувачі</a>
             <a href="{{ url('/admin/users/create') }}" class="admin-nav-link {{ request()->is('admin/users/create') ? 'active' : '' }}">Створити користувача</a>
+            <a href="{{ url('/admin/support') }}" class="admin-nav-link {{ request()->is('admin/support') ? 'active' : '' }}">Підтримка</a>
             <a href="{{ url('/') }}" class="admin-nav-link">На сайт</a>
             <form action="{{ url('/logout') }}" method="POST" class="mobile-logout-form">
                 @csrf

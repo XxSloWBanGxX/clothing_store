@@ -168,9 +168,99 @@
     </div>
 </footer>
 
+<div class="floating-tools">
+    <button type="button" class="floating-btn floating-top" id="backToTop" aria-label="Нагору" title="Нагору">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="18 15 12 9 6 15"></polyline>
+        </svg>
+    </button>
+
+    <button type="button" class="floating-btn floating-support" id="supportBtn" aria-label="Підтримка" title="Підтримка">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path>
+        </svg>
+    </button>
+</div>
+
+<div class="support-panel {{ session('supportSuccess') ? 'open' : '' }}" id="supportPanel">
+    <div class="support-panel-head">
+        <div>
+            <strong>Підтримка ClothStore</strong>
+            <p>Зазвичай відповідаємо протягом дня</p>
+        </div>
+        <button type="button" class="support-panel-close" id="supportClose" aria-label="Закрити">×</button>
+    </div>
+
+    <div class="support-panel-body">
+        @if (session('supportSuccess'))
+            <div class="alert-success">{{ session('supportSuccess') }}</div>
+        @endif
+
+        <p class="support-intro">Привіт! 👋 Напиши своє питання — і ми звʼяжемося з тобою.</p>
+
+        <form action="{{ url('/support') }}" method="POST" class="support-form">
+            @csrf
+
+            <div class="form-group">
+                <label for="support_name">Імʼя</label>
+                <input type="text" id="support_name" name="name" value="{{ auth()->check() ? auth()->user()->name : old('name') }}" required>
+                @error('name')<small class="form-error">{{ $message }}</small>@enderror
+            </div>
+
+            <div class="form-group">
+                <label for="support_email">Email</label>
+                <input type="email" id="support_email" name="email" value="{{ auth()->check() ? auth()->user()->email : old('email') }}" required>
+                @error('email')<small class="form-error">{{ $message }}</small>@enderror
+            </div>
+
+            <div class="form-group">
+                <label for="support_message">Повідомлення</label>
+                <textarea id="support_message" name="message" rows="4" placeholder="Опиши своє питання..." required>{{ old('message') }}</textarea>
+                @error('message')<small class="form-error">{{ $message }}</small>@enderror
+            </div>
+
+            <button type="submit" class="btn btn-dark" style="width:100%;">Надіслати</button>
+        </form>
+    </div>
+</div>
+
 <script src="{{ asset('assets/js/app.js') }}"></script>
 
 <script>
+    (function () {
+        const supportBtn = document.getElementById('supportBtn');
+        const supportPanel = document.getElementById('supportPanel');
+        const supportClose = document.getElementById('supportClose');
+        const backToTop = document.getElementById('backToTop');
+
+        if (supportBtn && supportPanel) {
+            supportBtn.addEventListener('click', function () {
+                supportPanel.classList.toggle('open');
+            });
+        }
+        if (supportClose && supportPanel) {
+            supportClose.addEventListener('click', function () {
+                supportPanel.classList.remove('open');
+            });
+        }
+
+        if (backToTop) {
+            const toggleTop = function () {
+                if (window.scrollY > 400) {
+                    backToTop.classList.add('show');
+                } else {
+                    backToTop.classList.remove('show');
+                }
+            };
+            window.addEventListener('scroll', toggleTop);
+            toggleTop();
+
+            backToTop.addEventListener('click', function () {
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            });
+        }
+    })();
+
     (function () {
         const btn = document.getElementById('userMenuBtn');
         const dropdown = document.getElementById('userDropdown');

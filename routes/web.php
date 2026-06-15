@@ -12,6 +12,7 @@ use App\Http\Controllers\AboutController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\CheckoutController;
 use App\Http\Controllers\ReviewController;
+use App\Http\Controllers\SupportController;
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\AdminOrderController;
 
@@ -20,6 +21,8 @@ Route::get('/catalog', [CatalogController::class, 'index']);
 Route::get('/product/{id}', [ProductController::class, 'show']);
 Route::get('/new', [NewController::class, 'index']);
 Route::get('/about', [AboutController::class, 'index']);
+
+Route::post('/support', [SupportController::class, 'store']);
 
 Route::get('/cart', [CartController::class, 'index']);
 Route::post('/cart/add', [CartController::class, 'add']);
@@ -70,6 +73,10 @@ Route::middleware('admin')->prefix('admin')->group(function () {
     Route::get('/categories', [AdminController::class, 'categories']);
     Route::post('/categories', [AdminController::class, 'storeCategory']);
     Route::delete('/categories/{id}', [AdminController::class, 'destroyCategory']);
+
+    Route::get('/support', [AdminController::class, 'support']);
+    Route::post('/support/{id}/resolve', [AdminController::class, 'resolveSupport']);
+    Route::delete('/support/{id}', [AdminController::class, 'destroySupport']);
 
     Route::get('/users', [AdminController::class, 'users']);
     Route::get('/users/create', [AdminController::class, 'createUser']);

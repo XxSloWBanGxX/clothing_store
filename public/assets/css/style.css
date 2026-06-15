@@ -4812,6 +4812,143 @@ textarea {
     text-decoration: underline;
 }
 
+/* Floating support + back-to-top */
+.floating-tools {
+    position: fixed;
+    right: 24px;
+    bottom: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    z-index: 90;
+}
+
+.floating-btn {
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    border: none;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 8px 24px rgba(17, 17, 17, 0.18);
+    transition: 0.22s;
+}
+
+.floating-top {
+    background: var(--white);
+    color: var(--dark);
+    border: 1px solid var(--line);
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(10px);
+}
+
+.floating-top.show {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+}
+
+.floating-top:hover {
+    background: var(--dark);
+    color: #fff;
+}
+
+.floating-support {
+    background: var(--dark);
+    color: #fff;
+}
+
+.floating-support:hover {
+    transform: scale(1.07);
+}
+
+/* Support panel */
+.support-panel {
+    position: fixed;
+    right: 24px;
+    bottom: 90px;
+    width: 340px;
+    max-width: calc(100vw - 48px);
+    background: var(--white);
+    border: 1px solid var(--line);
+    border-radius: 20px;
+    box-shadow: 0 20px 50px rgba(17, 17, 17, 0.22);
+    z-index: 95;
+    overflow: hidden;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(16px) scale(0.98);
+    transition: 0.24s;
+}
+
+.support-panel.open {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0) scale(1);
+}
+
+.support-panel-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 18px 20px;
+    background: var(--dark);
+    color: #fff;
+}
+
+.support-panel-head strong {
+    font-size: 1.02rem;
+}
+
+.support-panel-head p {
+    font-size: 0.8rem;
+    color: rgba(255, 255, 255, 0.7);
+    margin-top: 2px;
+}
+
+.support-panel-close {
+    background: rgba(255, 255, 255, 0.15);
+    border: none;
+    color: #fff;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 1.1rem;
+    line-height: 1;
+    flex-shrink: 0;
+}
+
+.support-panel-close:hover {
+    background: rgba(255, 255, 255, 0.3);
+}
+
+.support-panel-body {
+    padding: 18px 20px 20px;
+    max-height: 70vh;
+    overflow-y: auto;
+}
+
+.support-intro {
+    font-size: 0.9rem;
+    color: var(--text);
+    margin-bottom: 14px;
+}
+
+.support-form .form-group {
+    margin-bottom: 12px;
+}
+
+@media (max-width: 600px) {
+    .support-panel {
+        bottom: 84px;
+    }
+}
+
 /* Header cart widget */
 .cart-widget {
     position: relative;

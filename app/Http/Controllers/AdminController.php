@@ -409,6 +409,29 @@ class AdminController extends Controller
         return redirect('/admin/categories')->with('status', 'Категорію видалено');
     }
 
+    public function support()
+    {
+        $messages = DB::table('support_messages')
+            ->orderBy('id', 'desc')
+            ->get();
+
+        return view('admin.support', compact('messages'));
+    }
+
+    public function resolveSupport($id)
+    {
+        DB::table('support_messages')->where('id', $id)->update(['status' => 'resolved']);
+
+        return redirect('/admin/support')->with('status', 'Звернення позначено як опрацьоване');
+    }
+
+    public function destroySupport($id)
+    {
+        DB::table('support_messages')->where('id', $id)->delete();
+
+        return redirect('/admin/support')->with('status', 'Звернення видалено');
+    }
+
     public function users()
     {
         $users = DB::table('users')->orderBy('id', 'desc')->get();
