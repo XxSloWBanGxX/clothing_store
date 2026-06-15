@@ -14,6 +14,7 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\CheckoutController;
 use App\Http\Controllers\ReviewController;
 use App\Http\Controllers\SupportController;
+use App\Http\Controllers\DeliveryController;
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\AdminOrderController;
 
@@ -43,10 +44,14 @@ Route::post('/favorites/delete-folder', [FavoritesController::class, 'deleteFold
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'index']);
     Route::post('/profile/update', [ProfileController::class, 'updateProfile']);
+    Route::post('/profile/delivery', [ProfileController::class, 'updateDelivery']);
     Route::post('/profile/avatar', [ProfileController::class, 'uploadAvatar']);
     Route::post('/profile/password', [ProfileController::class, 'changePassword']);
     Route::get('/profile/order/{id}', [ProfileController::class, 'order']);
     Route::post('/profile/order/{id}/cancel', [ProfileController::class, 'cancelOrder']);
+
+    Route::get('/api/delivery/cities', [DeliveryController::class, 'cities']);
+    Route::get('/api/delivery/points', [DeliveryController::class, 'points']);
 
     Route::get('/checkout', [CheckoutController::class, 'index']);
     Route::post('/checkout', [CheckoutController::class, 'store']);

@@ -50,4 +50,16 @@ return [
         ];
     })(),
 
+    'nova_poshta' => [
+        'api_key' => env('NOVA_POSHTA_API_KEY', ''),
+    ],
+
+    'ukrposhta' => [
+        'bearer' => env('UKRPOSHTA_BEARER', ''),
+    ],
+
+    'meest' => [
+        'token' => env('MEEST_API_TOKEN', ''),
+    ],
+
 ];

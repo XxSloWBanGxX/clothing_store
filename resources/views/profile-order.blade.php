@@ -64,8 +64,26 @@
                         </div>
                         <div class="profile-info-item">
                             <span>Оплата</span>
-                            <strong>{{ $order->payment_method }}</strong>
+                            <strong>
+                                @if ($order->payment_method === 'card')
+                                    Картка онлайн
+                                    @if (($order->payment_status ?? '') === 'paid')
+                                        — оплачено
+                                        @if (! empty($order->card_last4))
+                                            (•••• {{ $order->card_last4 }})
+                                        @endif
+                                    @endif
+                                @else
+                                    При отриманні
+                                @endif
+                            </strong>
                         </div>
+                        @if (! empty($order->payment_reference))
+                            <div class="profile-info-item">
+                                <span>Код платежу</span>
+                                <strong>{{ $order->payment_reference }}</strong>
+                            </div>
+                        @endif
                         <div class="profile-info-item">
                             <span>Коментар</span>
                             <strong>{{ $order->comment ?: '—' }}</strong>
@@ -114,7 +132,7 @@
                 </div>
 
                 <div style="margin-top: 24px; display: flex; gap: 12px; flex-wrap: wrap;">
-                    <a href="{{ url('/profile') }}" class="btn btn-light">Назад до профілю</a>
+                    <a href="{{ url('/profile?tab=orders') }}" class="btn btn-light">Назад до профілю</a>
 
                     @if (in_array($order->status, ['new', 'processing'], true))
                         <form action="{{ url('/profile/order/' . $order->id . '/cancel') }}" method="POST" onsubmit="return confirm('Скасувати це замовлення?');">

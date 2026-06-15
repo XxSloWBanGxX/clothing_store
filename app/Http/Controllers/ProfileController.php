@@ -2,10 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Services\Delivery\UserDeliveryStorage;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Validation\Rule;
 
 class ProfileController extends Controller
@@ -13,13 +15,49 @@ class ProfileController extends Controller
     public function index()
     {
         $user = Auth::user();
+        $userRow = DB::table('users')->where('id', $user->id)->first();
+
+        $this->ensureWelcomePromo($user->id);
 
         $orders = DB::table('orders')
             ->where('user_id', $user->id)
             ->orderBy('id', 'desc')
             ->get();
 
-        return view('profile', compact('user', 'orders'));
+        $reviews = DB::table('reviews')
+            ->leftJoin('products', 'products.id', '=', 'reviews.product_id')
+            ->where('reviews.user_id', $user->id)
+            ->orderBy('reviews.id', 'desc')
+            ->select('reviews.*', 'products.name as product_name', 'products.slug as product_slug')
+            ->get();
+
+        $promocodes = Schema::hasTable('user_promocodes')
+            ? DB::table('user_promocodes')->where('user_id', $user->id)->orderBy('id', 'desc')->get()
+            : collect();
+
+        $bonusHistory = Schema::hasTable('bonus_history')
+            ? DB::table('bonus_history')->where('user_id', $user->id)->orderBy('id', 'desc')->get()
+            : collect();
+
+        $bonusPoints = $userRow->bonus_points ?? 0;
+        $activeTab = request('tab', 'settings');
+        $deliverySaved = UserDeliveryStorage::pickerSaved($userRow, old('delivery_carrier'));
+
+        if (! in_array($activeTab, ['settings', 'orders', 'promos', 'bonus', 'reviews'], true)) {
+            $activeTab = 'settings';
+        }
+
+        return view('profile', compact(
+            'user',
+            'userRow',
+            'orders',
+            'reviews',
+            'promocodes',
+            'bonusHistory',
+            'bonusPoints',
+            'activeTab',
+            'deliverySaved'
+        ));
     }
 
     public function uploadAvatar(Request $request)
@@ -40,7 +78,6 @@ class ProfileController extends Controller
             mkdir($dir, 0777, true);
         }
 
-        // Видаляємо старий аватар
         if (! empty($user->avatar)) {
             $oldPath = $dir . DIRECTORY_SEPARATOR . $user->avatar;
             if (is_file($oldPath)) {
@@ -54,7 +91,7 @@ class ProfileController extends Controller
 
         DB::table('users')->where('id', $user->id)->update(['avatar' => $name]);
 
-        return back()->with('avatarSuccess', 'Аватар оновлено');
+        return redirect('/profile?tab=settings')->with('avatarSuccess', 'Аватар оновлено');
     }
 
     public function changePassword(Request $request)
@@ -81,7 +118,7 @@ class ProfileController extends Controller
             'password' => Hash::make($request->input('new_password')),
         ]);
 
-        return back()->with('passwordSuccess', 'Пароль успішно змінено');
+        return redirect('/profile?tab=settings')->with('passwordSuccess', 'Пароль успішно змінено');
     }
 
     public function order($id)
@@ -94,7 +131,7 @@ class ProfileController extends Controller
             ->first();
 
         if (! $order) {
-            return redirect('/profile');
+            return redirect('/profile?tab=orders');
         }
 
         $items = DB::table('order_items')->where('order_id', $id)->orderBy('id')->get();
@@ -112,17 +149,16 @@ class ProfileController extends Controller
             ->first();
 
         if (! $order) {
-            return redirect('/profile');
+            return redirect('/profile?tab=orders');
         }
 
         if (! in_array($order->status, ['new', 'processing'], true)) {
-            return back()->with('orderError', 'Це замовлення вже не можна скасувати');
+            return redirect('/profile?tab=orders')->with('orderError', 'Це замовлення вже не можна скасувати');
         }
 
         DB::transaction(function () use ($id) {
             DB::table('orders')->where('id', $id)->update(['status' => 'cancelled']);
 
-            // Повертаємо залишки на склад
             $items = DB::table('order_items')->where('order_id', $id)->get();
             foreach ($items as $item) {
                 DB::table('products')
@@ -131,7 +167,7 @@ class ProfileController extends Controller
             }
         });
 
-        return back()->with('orderSuccess', 'Замовлення скасовано');
+        return redirect('/profile?tab=orders')->with('orderSuccess', 'Замовлення #' . $id . ' скасовано');
     }
 
     public function updateProfile(Request $request)
@@ -161,6 +197,68 @@ class ProfileController extends Controller
             'phone' => $validated['phone'],
         ]);
 
-        return back()->with('profileSuccess', 'Дані оновлено');
+        return redirect('/profile?tab=settings')->with('profileSuccess', 'Дані оновлено');
+    }
+
+    public function updateDelivery(Request $request)
+    {
+        $validated = $request->validate([
+            'delivery_carrier' => ['required', 'in:nova_poshta,ukrposhta,meest,courier,pickup'],
+            'delivery_city' => ['required', 'string', 'max:255'],
+            'delivery_branch' => ['required', 'string', 'max:255'],
+            'delivery_city_ref' => ['nullable', 'string', 'max:64'],
+            'delivery_branch_ref' => ['nullable', 'string', 'max:64'],
+            'manual_address' => ['nullable', 'boolean'],
+        ], [
+            'delivery_carrier.required' => 'Обери перевізника',
+            'delivery_city.required' => 'Обери або введи місто',
+            'delivery_branch.required' => 'Обери або введи відділення',
+        ]);
+
+        UserDeliveryStorage::save(Auth::id(), $validated['delivery_carrier'], [
+            'city' => $validated['delivery_city'],
+            'branch' => $validated['delivery_branch'],
+            'city_ref' => $validated['delivery_city_ref'] ?? '',
+            'branch_ref' => $validated['delivery_branch_ref'] ?? '',
+            'manual' => (bool) ($validated['manual_address'] ?? false),
+        ]);
+
+        return redirect('/profile?tab=settings')->with('deliverySuccess', 'Адресу для обраного перевізника збережено');
+    }
+
+    private function ensureWelcomePromo(int $userId): void
+    {
+        if (! Schema::hasTable('user_promocodes')) {
+            return;
+        }
+
+        $exists = DB::table('user_promocodes')->where('user_id', $userId)->exists();
+
+        if ($exists) {
+            return;
+        }
+
+        DB::table('user_promocodes')->insert([
+            'user_id' => $userId,
+            'code' => 'WELCOME10',
+            'title' => 'Вітальна знижка 10%',
+            'discount_percent' => 10,
+            'expires_at' => now()->addMonths(3),
+            'created_at' => now(),
+        ]);
+
+        if (Schema::hasTable('bonus_history')) {
+            DB::table('bonus_history')->insert([
+                'user_id' => $userId,
+                'points' => 100,
+                'type' => 'accrual',
+                'description' => 'Бонус за реєстрацію',
+                'created_at' => now(),
+            ]);
+        }
+
+        if (Schema::hasColumn('users', 'bonus_points')) {
+            DB::table('users')->where('id', $userId)->increment('bonus_points', 100);
+        }
     }
 }
