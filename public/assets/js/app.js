@@ -274,4 +274,44 @@ document.addEventListener('DOMContentLoaded', function () {
 
         ensureGalleryEmptyPlaceholder();
     }
+
+    document.addEventListener('click', function (e) {
+        const trigger = e.target.closest('.fav-picker-trigger');
+
+        if (trigger) {
+            e.preventDefault();
+            e.stopPropagation();
+
+            const picker = trigger.closest('[data-fav-picker]');
+            const menu = picker ? picker.querySelector('.fav-picker-menu') : null;
+
+            document.querySelectorAll('[data-fav-picker] .fav-picker-menu').forEach(function (item) {
+                if (item !== menu) {
+                    item.hidden = true;
+                }
+            });
+
+            document.querySelectorAll('.fav-picker-trigger').forEach(function (btn) {
+                if (btn !== trigger) {
+                    btn.setAttribute('aria-expanded', 'false');
+                }
+            });
+
+            if (menu) {
+                menu.hidden = !menu.hidden;
+                trigger.setAttribute('aria-expanded', menu.hidden ? 'false' : 'true');
+            }
+
+            return;
+        }
+
+        if (!e.target.closest('[data-fav-picker]')) {
+            document.querySelectorAll('[data-fav-picker] .fav-picker-menu').forEach(function (menu) {
+                menu.hidden = true;
+            });
+            document.querySelectorAll('.fav-picker-trigger').forEach(function (btn) {
+                btn.setAttribute('aria-expanded', 'false');
+            });
+        }
+    });
 });

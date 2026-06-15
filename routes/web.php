@@ -36,6 +36,7 @@ Route::post('/cart/remove', [CartController::class, 'remove']);
 
 Route::get('/favorites', [FavoritesController::class, 'index']);
 Route::post('/favorites/add', [FavoritesController::class, 'add']);
+Route::post('/favorites/move', [FavoritesController::class, 'move']);
 Route::post('/favorites/create-folder', [FavoritesController::class, 'createFolder']);
 Route::post('/favorites/remove', [FavoritesController::class, 'remove']);
 Route::post('/favorites/clear-folder', [FavoritesController::class, 'clearFolder']);

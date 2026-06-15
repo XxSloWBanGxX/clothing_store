@@ -1,410 +1,431 @@
 @extends('layouts.app')
 
 @php
-/** @var array $data */
-/** @var array $product */
     $product = $data['product'];
     $images = $data['images'] ?? [];
     $sizes = $data['sizes'] ?? [];
     $colors = $data['colors'] ?? [];
+    $reviews = $data['reviews'] ?? [];
+    $avgRating = $data['avgRating'] ?? 0;
+    $reviewCount = count($reviews);
 
     $gallery = [];
-    if (!empty($product['image'])) {
+    if (! empty($product['image'])) {
         $gallery[] = $product['image'];
     }
-    if (!empty($images)) {
+    if (! empty($images)) {
         foreach ($images as $img) {
-            if (!empty($img['image_path']) && !in_array($img['image_path'], $gallery, true)) {
+            if (! empty($img['image_path']) && ! in_array($img['image_path'], $gallery, true)) {
                 $gallery[] = $img['image_path'];
             }
         }
     }
 
-    $mainImage = !empty($gallery) ? $gallery[0] : '';
+    $mainImage = ! empty($gallery) ? $gallery[0] : '';
+    $inStock = (int) ($product['stock'] ?? 0) > 0;
+    $onSale = ! empty($product['old_price']) && (float) $product['old_price'] > (float) $product['price'];
+    $discountPercent = $onSale ? (int) round((1 - (float) $product['price'] / (float) $product['old_price']) * 100) : 0;
 
     $characteristics = [
         'Категорія' => $product['category_name'] ?? 'Одяг',
-        'Артикул' => !empty($product['id']) ? ('#' . (int)$product['id']) : '—',
-        'Наявність' => (int)$product['stock'] > 0 ? 'Є в наявності' : 'Немає в наявності',
+        'Артикул' => ! empty($product['id']) ? ('#' . (int) $product['id']) : '—',
+        'Наявність' => $inStock ? 'Є в наявності' : 'Немає в наявності',
     ];
+
+    if (! empty($sizes)) {
+        $characteristics['Розміри'] = collect($sizes)->pluck('size_label')->implode(', ');
+    }
+    if (! empty($colors)) {
+        $characteristics['Кольори'] = collect($colors)->pluck('color_name')->implode(', ');
+    }
 @endphp
 
 @section('title', $product['name'] . ' - CLOTHSTORE')
 
 @section('content')
-<main class="product-page">
-    <section class="product-breadcrumbs-wrap">
+<main class="product-page product-page-v2">
+    <section class="pd-top">
         <div class="container">
-            <nav class="product-breadcrumbs">
+            <nav class="pd-breadcrumbs" aria-label="Навігація">
                 <a href="{{ url('/') }}">Головна</a>
                 <span>/</span>
                 <a href="{{ url('/catalog') }}">Каталог</a>
+                @if (! empty($product['category_name']))
+                    <span>/</span>
+                    <a href="{{ url('/catalog?category=' . ($product['category_slug'] ?? '')) }}">{{ $product['category_name'] }}</a>
+                @endif
                 <span>/</span>
-                <span>{{ $product['category_name'] ?? 'Товар' }}</span>
+                <span>{{ $product['name'] }}</span>
             </nav>
         </div>
     </section>
 
-    <section class="product-market-section">
-        <div class="container">
-            <div class="product-market-layout">
-                <div class="product-gallery-panel">
-                    <div class="product-gallery-grid">
-                        @if (!empty($gallery))
-                            <div class="product-gallery-thumbs">
+    <section class="pd-hero">
+        <div class="container pd-layout">
+            <div class="pd-gallery">
+                <div class="pd-gallery-card">
+                    @if (! empty($gallery))
+                        <div class="pd-gallery-counter" id="galleryCounter">1 / {{ count($gallery) }}</div>
+
+                        @if ($onSale)
+                            <span class="pd-gallery-badge sale">−{{ $discountPercent }}%</span>
+                        @endif
+
+                        <div class="pd-gallery-main">
+                            <button type="button" class="pd-gallery-arrow left" id="productPrevImage" aria-label="Попереднє фото">‹</button>
+
+                            <img
+                                id="mainProductImage"
+                                src="{{ asset('assets/images/products/' . $mainImage) }}"
+                                alt="{{ $product['name'] }}"
+                                class="product-gallery-main-image pd-gallery-image"
+                                data-current-index="0"
+                                onerror="this.style.display='none'; document.getElementById('mainProductFallback').style.display='flex';"
+                            >
+                            <div id="mainProductFallback" class="pd-gallery-fallback" style="display:none;">{{ $product['name'] }}</div>
+
+                            <button type="button" class="pd-gallery-arrow right" id="productNextImage" aria-label="Наступне фото">›</button>
+                        </div>
+
+                        @if (count($gallery) > 1)
+                            <div class="pd-gallery-thumbs">
                                 @foreach ($gallery as $index => $imgPath)
                                     <button
                                         type="button"
-                                        class="product-gallery-thumb {{ $index === 0 ? 'active' : '' }}"
+                                        class="product-gallery-thumb pd-gallery-thumb {{ $index === 0 ? 'active' : '' }}"
                                         data-index="{{ $index }}"
                                         data-image-src="{{ asset('assets/images/products/' . $imgPath) }}"
+                                        aria-label="Фото {{ $index + 1 }}"
                                     >
-                                        <img
-                                            src="{{ asset('assets/images/products/' . $imgPath) }}"
-                                            alt="Фото товару"
-                                            class="product-gallery-thumb-image"
-                                            onerror="this.style.display='none';"
-                                        >
+                                        <img src="{{ asset('assets/images/products/' . $imgPath) }}" alt="" class="product-gallery-thumb-image">
                                     </button>
                                 @endforeach
                             </div>
+                        @endif
+                    @else
+                        <div class="pd-gallery-main">
+                            <div class="pd-gallery-fallback visible">{{ $product['name'] }}</div>
+                        </div>
+                    @endif
+                </div>
+            </div>
 
-                            <div class="product-gallery-main-card">
-                                <button type="button" class="product-gallery-arrow left" id="productPrevImage">‹</button>
+            <div class="pd-buy">
+                <div class="pd-buy-card">
+                    <div class="pd-buy-head">
+                        @if (! empty($product['category_name']))
+                            <a href="{{ url('/catalog?category=' . ($product['category_slug'] ?? '')) }}" class="pd-category">{{ $product['category_name'] }}</a>
+                        @endif
+                        <span class="pd-stock {{ $inStock ? 'in' : 'out' }}">{{ $inStock ? 'В наявності' : 'Немає в наявності' }}</span>
+                    </div>
 
-                                <img
-                                    id="mainProductImage"
-                                    src="{{ asset('assets/images/products/' . $mainImage) }}"
-                                    alt="{{ $product['name'] }}"
-                                    class="product-gallery-main-image"
-                                    data-current-index="0"
-                                    onerror="this.style.display='none'; document.getElementById('mainProductFallback').style.display='flex';"
-                                >
-                                <div
-                                    id="mainProductFallback"
-                                    class="product-gallery-main-fallback"
-                                    style="display:none;"
-                                >
-                                    {{ $product['name'] }}
-                                </div>
+                    <h1 class="pd-title">{{ $product['name'] }}</h1>
 
-                                <button type="button" class="product-gallery-arrow right" id="productNextImage">›</button>
-                            </div>
-                        @else
-                            <div class="product-gallery-main-card only-main">
-                                <div class="product-gallery-main-fallback visible">
-                                    {{ $product['name'] }}
-                                </div>
+                    <div class="pd-meta-row">
+                        <span class="pd-sku">Артикул #{{ $product['id'] }}</span>
+                        @if ($reviewCount > 0)
+                            <div class="pd-rating">
+                                <span class="pd-rating-stars">{!! str_repeat('★', (int) round($avgRating)) . str_repeat('☆', 5 - (int) round($avgRating)) !!}</span>
+                                <span>{{ $avgRating }} · {{ $reviewCount }} {{ $reviewCount === 1 ? 'відгук' : ($reviewCount < 5 ? 'відгуки' : 'відгуків') }}</span>
                             </div>
                         @endif
                     </div>
-                </div>
 
-                <div class="product-buy-panel">
-                    <div class="product-buy-card">
-                        <div class="product-buy-topline">
-                            <span class="product-article">Код: {{ $product['id'] }}</span>
-                            <span class="product-status {{ (int)$product['stock'] > 0 ? 'in-stock' : 'out-of-stock' }}">
-                                {{ (int)$product['stock'] > 0 ? 'Є в наявності' : 'Немає в наявності' }}
-                            </span>
-                        </div>
+                    @if (session('success'))
+                        <div class="alert-success">{{ session('success') }}</div>
+                    @endif
+                    @if (session('stockError'))
+                        <div class="alert-error">{{ session('stockError') }}</div>
+                    @endif
 
-                        <h1 class="product-market-title">{{ $product['name'] }}</h1>
-
-                        @if (session('success'))
-                            <div class="alert-success">{{ session('success') }}</div>
-                        @endif
-                        @if (session('stockError'))
-                            <div class="alert-error">{{ session('stockError') }}</div>
-                        @endif
-
-                        <div class="product-price-box">
-                            <div class="product-price-main">
-                                {{ number_format((float)$product['price'], 0, '.', ' ') }} грн
-                                @if (! empty($product['old_price']) && (float)$product['old_price'] > (float)$product['price'])
-                                    <span class="price-old">{{ number_format((float)$product['old_price'], 0, '.', ' ') }} грн</span>
-                                    <span class="sale-badge">SALE</span>
-                                @endif
+                    <div class="pd-price-block">
+                        @if ($onSale)
+                            <div class="pd-price-row">
+                                <span class="pd-price-current">{{ number_format((float) $product['price'], 0, '.', ' ') }} грн</span>
+                                <span class="pd-price-old">{{ number_format((float) $product['old_price'], 0, '.', ' ') }} грн</span>
+                                <span class="pd-price-badge">Sale</span>
                             </div>
-                            <div class="product-price-note">Ціна для онлайн-замовлення</div>
-                        </div>
+                        @else
+                            <div class="pd-price-current solo">{{ number_format((float) $product['price'], 0, '.', ' ') }} грн</div>
+                        @endif
+                        <p class="pd-price-note">Онлайн-ціна · доставка по Україні</p>
+                    </div>
 
-                        <form action="{{ url('/cart/add') }}" method="POST" id="productCartForm">
-                            @csrf
-                            <input type="hidden" name="product_id" value="{{ $product['id'] }}">
-                            <input type="hidden" name="selected_size" id="selectedSizeInput" value="{{ $sizes[0]['size_label'] ?? '' }}">
-                            <input type="hidden" name="selected_color_name" id="selectedColorNameInput" value="{{ $colors[0]['color_name'] ?? '' }}">
-                            <input type="hidden" name="selected_color_hex" id="selectedColorHexInput" value="{{ $colors[0]['color_hex'] ?? '' }}">
+                    <form action="{{ url('/cart/add') }}" method="POST" id="productCartForm" class="pd-form">
+                        @csrf
+                        <input type="hidden" name="product_id" value="{{ $product['id'] }}">
+                        <input type="hidden" name="selected_size" id="selectedSizeInput" value="{{ $sizes[0]['size_label'] ?? '' }}">
+                        <input type="hidden" name="selected_color_name" id="selectedColorNameInput" value="{{ $colors[0]['color_name'] ?? '' }}">
+                        <input type="hidden" name="selected_color_hex" id="selectedColorHexInput" value="{{ $colors[0]['color_hex'] ?? '' }}">
 
-                            @if (!empty($sizes))
-                                <div class="product-size-box">
-                                    <div class="product-size-title">Розмір</div>
-                                    <div class="product-size-list">
-                                        @foreach ($sizes as $index => $size)
-                                            <button
-                                                type="button"
-                                                class="product-size-btn {{ $index === 0 ? 'active' : '' }}"
-                                                data-size="{{ $size['size_label'] }}"
-                                            >
-                                                {{ $size['size_label'] }}
-                                            </button>
-                                        @endforeach
-                                    </div>
+                        @if (! empty($sizes))
+                            <div class="pd-option">
+                                <div class="pd-option-head">
+                                    <span class="pd-option-label">Розмір</span>
+                                    <span class="pd-option-hint" id="selectedSizeLabel">{{ $sizes[0]['size_label'] ?? '' }}</span>
                                 </div>
-                            @endif
+                                <div class="pd-size-list">
+                                    @foreach ($sizes as $index => $size)
+                                        <button type="button" class="product-size-btn pd-size-btn {{ $index === 0 ? 'active' : '' }}" data-size="{{ $size['size_label'] }}">
+                                            {{ $size['size_label'] }}
+                                        </button>
+                                    @endforeach
+                                </div>
+                            </div>
+                        @endif
 
-                            @if (!empty($colors))
-                                <div class="product-color-box">
-                                    <div class="product-size-title">Колір</div>
-                                    <div class="product-color-list">
-                                        @foreach ($colors as $index => $color)
-                                            @php
+                        @if (! empty($colors))
+                            <div class="pd-option">
+                                <div class="pd-option-head">
+                                    <span class="pd-option-label">Колір</span>
+                                    <span class="pd-option-hint" id="selectedColorLabel">{{ $colors[0]['color_name'] ?? '' }}</span>
+                                </div>
+                                <div class="pd-color-list">
+                                    @foreach ($colors as $index => $color)
+                                        @php
                                             $buttonColor = '#d9d9df';
-                                            if (!empty($color['color_hex'])) {
-                                                $buttonColor = strpos($color['color_hex'], '#') === 0
-                                                    ? $color['color_hex']
-                                                    : ('#' . $color['color_hex']);
+                                            if (! empty($color['color_hex'])) {
+                                                $buttonColor = str_starts_with($color['color_hex'], '#') ? $color['color_hex'] : ('#' . $color['color_hex']);
                                             }
                                         @endphp
                                         <button
                                             type="button"
-                                            class="product-color-btn {{ $index === 0 ? 'active' : '' }}"
+                                            class="product-color-btn pd-color-btn {{ $index === 0 ? 'active' : '' }}"
                                             data-color-name="{{ $color['color_name'] }}"
                                             data-color-hex="{{ $color['color_hex'] ?? '' }}"
                                             title="{{ $color['color_name'] }}"
                                         >
-                                            <span
-                                                class="product-color-dot"
-                                                data-color="{{ $buttonColor }}"
-                                            ></span>
-                                            <span class="product-color-name">{{ $color['color_name'] }}</span>
+                                            <span class="product-color-dot pd-color-dot" data-color="{{ $buttonColor }}"></span>
                                         </button>
-                                        @endforeach
-                                    </div>
+                                    @endforeach
                                 </div>
-                            @endif
+                            </div>
+                        @endif
 
-                            @if ((int)$product['stock'] > 0)
-                                <div class="product-qty-box">
-                                    <span class="product-qty-label">Кількість</span>
-                                    <div class="product-qty-control">
-                                        <button type="button" class="product-qty-btn" id="qtyMinus">−</button>
-                                        <input type="number" name="quantity" id="qtyInput" value="1" min="1" max="{{ (int)$product['stock'] }}" readonly>
-                                        <button type="button" class="product-qty-btn" id="qtyPlus">+</button>
-                                    </div>
+                        @if ($inStock)
+                            <div class="pd-option">
+                                <div class="pd-option-head">
+                                    <span class="pd-option-label">Кількість</span>
                                 </div>
-                            @endif
-
-                            <div class="product-main-actions">
-                                <button type="submit" class="btn btn-dark product-buy-btn" {{ (int)$product['stock'] == 0 ? 'disabled' : '' }}>
-                                    Додати в кошик
-                                </button>
-                        </form>
-
-                                <form action="{{ url('/favorites/add') }}" method="POST" style="margin:0;">
-                                    @csrf
-                                    <input type="hidden" name="product_id" value="{{ $product['id'] }}">
-                                    <button type="submit" class="btn btn-light product-favorite-btn">В обране</button>
-                                </form>
+                                <div class="product-qty-control pd-qty">
+                                    <button type="button" class="product-qty-btn" id="qtyMinus" aria-label="Менше">−</button>
+                                    <input type="number" name="quantity" id="qtyInput" value="1" min="1" max="{{ (int) $product['stock'] }}" readonly>
+                                    <button type="button" class="product-qty-btn" id="qtyPlus" aria-label="Більше">+</button>
+                                </div>
                             </div>
+                        @endif
 
-                        <div class="product-service-cards">
-                            <div class="product-service-card">
-                                <h3>Доставка</h3>
-                                <p>Самовивіз, кур'єр або пошта. Точні умови додамо пізніше.</p>
+                        <div class="pd-actions">
+                            <button type="submit" class="btn btn-dark pd-cart-btn" {{ ! $inStock ? 'disabled' : '' }}>
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
+                                {{ $inStock ? 'Додати в кошик' : 'Немає в наявності' }}
+                            </button>
+                        </div>
+                    </form>
+
+                    @include('partials.favorite-folder-picker', [
+                        'productId' => $product['id'],
+                        'folders' => $data['favoriteFolders'] ?? [],
+                        'variant' => 'product',
+                    ])
+
+                    <div class="pd-trust">
+                        <div class="pd-trust-item">
+                            <span class="pd-trust-icon">🚚</span>
+                            <div>
+                                <strong>Доставка</strong>
+                                <p>Нова Пошта, Укрпошта, Meest</p>
                             </div>
-
-                            <div class="product-service-card">
-                                <h3>Оплата</h3>
-                                <p>Карткою онлайн, при отриманні, або інші методи оплати.</p>
+                        </div>
+                        <div class="pd-trust-item">
+                            <span class="pd-trust-icon">💳</span>
+                            <div>
+                                <strong>Оплата</strong>
+                                <p>Онлайн або при отриманні</p>
                             </div>
-
-                            <div class="product-service-card">
-                                <h3>Гарантія та повернення</h3>
-                                <p>Повернення товару протягом 14–30 днів залежно від категорії.</p>
+                        </div>
+                        <div class="pd-trust-item">
+                            <span class="pd-trust-icon">↩</span>
+                            <div>
+                                <strong>Повернення</strong>
+                                <p>14 днів без зайвих питань</p>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
+        </div>
+    </section>
 
-            <div class="product-tabs-wrap">
-                <div class="product-tabs-nav">
-                    <button type="button" class="product-tab-btn active" data-tab="description">Опис</button>
-                    <button type="button" class="product-tab-btn" data-tab="characteristics">Характеристики</button>
-                    <button type="button" class="product-tab-btn" data-tab="reviews">Відгуки</button>
+    <section class="pd-details">
+        <div class="container">
+            <div class="pd-tabs-card">
+                <div class="pd-tabs-nav">
+                    <button type="button" class="product-tab-btn pd-tab-btn active" data-tab="description">Опис</button>
+                    <button type="button" class="product-tab-btn pd-tab-btn" data-tab="characteristics">Характеристики</button>
+                    <button type="button" class="product-tab-btn pd-tab-btn" data-tab="reviews">
+                        Відгуки
+                        @if ($reviewCount > 0)
+                            <span class="pd-tab-count">{{ $reviewCount }}</span>
+                        @endif
+                    </button>
                 </div>
 
-                <div class="product-tab-panels">
-                    <section class="product-tab-panel active" data-panel="description">
-                        <div class="product-tab-card">
-                            <h2>Опис</h2>
-                            <p>{!! nl2br(e($product['description'] ?? 'Опис товару буде додано пізніше.')) !!}</p>
+                <div class="pd-tab-panels">
+                    <section class="product-tab-panel pd-tab-panel active" data-panel="description">
+                        <h2>Про товар</h2>
+                        <div class="pd-description">
+                            {!! nl2br(e($product['description'] ?? 'Опис товару буде додано пізніше.')) !!}
                         </div>
                     </section>
 
-                    <section class="product-tab-panel" data-panel="characteristics">
-                        <div class="product-tab-card">
-                            <h2>Характеристики</h2>
-                            <div class="product-specs-table">
-                                @foreach ($characteristics as $label => $value)
-                                    <div class="product-spec-row">
-                                        <div class="product-spec-label">{{ $label }}</div>
-                                        <div class="product-spec-value">{{ $value }}</div>
-                                    </div>
-                                @endforeach
-                            </div>
-                        </div>
+                    <section class="product-tab-panel pd-tab-panel" data-panel="characteristics">
+                        <h2>Характеристики</h2>
+                        <dl class="pd-specs">
+                            @foreach ($characteristics as $label => $value)
+                                <div class="pd-spec-row">
+                                    <dt>{{ $label }}</dt>
+                                    <dd>{{ $value }}</dd>
+                                </div>
+                            @endforeach
+                        </dl>
                     </section>
 
-                    <section class="product-tab-panel" data-panel="reviews">
-                        <div class="product-tab-card">
-                            @php
-                                $reviews = $data['reviews'] ?? [];
-                                $avgRating = $data['avgRating'] ?? 0;
-                            @endphp
-
-                            <div class="product-reviews-head">
-                                <h2>Відгуки</h2>
-                                @if (! empty($reviews))
-                                    <div class="product-reviews-rating">
-                                        <span class="reviews-stars">{!! str_repeat('★', (int) round($avgRating)) . str_repeat('☆', 5 - (int) round($avgRating)) !!}</span>
-                                        <span>{{ $avgRating }} / 5 ({{ count($reviews) }})</span>
-                                    </div>
+                    <section class="product-tab-panel pd-tab-panel" data-panel="reviews">
+                        <div class="pd-reviews-head">
+                            <div>
+                                <h2>Відгуки покупців</h2>
+                                @if ($reviewCount > 0)
+                                    <p class="pd-reviews-summary">{{ $avgRating }} з 5 · {{ $reviewCount }} оцінок</p>
+                                @else
+                                    <p class="pd-reviews-summary">Поки без відгуків — будь першим</p>
                                 @endif
                             </div>
-
-                            @if (session('reviewSuccess'))
-                                <div class="alert-success">{{ session('reviewSuccess') }}</div>
+                            @if ($reviewCount > 0)
+                                <div class="pd-reviews-score">
+                                    <strong>{{ $avgRating }}</strong>
+                                    <span class="pd-rating-stars">{!! str_repeat('★', (int) round($avgRating)) . str_repeat('☆', 5 - (int) round($avgRating)) !!}</span>
+                                </div>
                             @endif
+                        </div>
 
-                            @if (! empty($reviews))
-                                <div class="product-reviews-list">
-                                    @foreach ($reviews as $review)
-                                        <div class="product-review-item">
-                                            <div class="product-review-top">
-                                                <strong>{{ $review['author_name'] }}</strong>
-                                                <span class="reviews-stars">{!! str_repeat('★', (int) $review['rating']) . str_repeat('☆', 5 - (int) $review['rating']) !!}</span>
-                                            </div>
-                                            <p>{{ $review['comment'] }}</p>
-                                            <small class="product-review-date">{{ $review['created_at'] }}</small>
+                        @if (session('reviewSuccess'))
+                            <div class="alert-success">{{ session('reviewSuccess') }}</div>
+                        @endif
+
+                        @if (! empty($reviews))
+                            <div class="pd-reviews-list">
+                                @foreach ($reviews as $review)
+                                    <article class="pd-review">
+                                        <div class="pd-review-top">
+                                            <strong>{{ $review['author_name'] }}</strong>
+                                            <span class="pd-rating-stars sm">{!! str_repeat('★', (int) $review['rating']) . str_repeat('☆', 5 - (int) $review['rating']) !!}</span>
                                         </div>
-                                    @endforeach
-                                </div>
-                            @else
-                                <div class="product-reviews-empty">
-                                    Поки що відгуків немає. Стань першим, хто залишить відгук!
-                                </div>
-                            @endif
+                                        <p>{{ $review['comment'] }}</p>
+                                        <time class="pd-review-date">{{ $review['created_at'] }}</time>
+                                    </article>
+                                @endforeach
+                            </div>
+                        @else
+                            <div class="pd-reviews-empty">Ще ніхто не залишив відгук про цей товар.</div>
+                        @endif
 
-                            @auth
-                                <form action="{{ url('/product/' . $product['id'] . '/review') }}" method="POST" class="product-review-form">
-                                    @csrf
-                                    <h3>Залишити відгук</h3>
-
+                        @auth
+                            <form action="{{ url('/product/' . $product['id'] . '/review') }}" method="POST" class="pd-review-form">
+                                @csrf
+                                <h3>Написати відгук</h3>
+                                <div class="pd-review-fields">
                                     <div class="form-group">
                                         <label for="rating">Оцінка</label>
                                         <select id="rating" name="rating">
-                                            <option value="5">5 — Відмінно</option>
-                                            <option value="4">4 — Добре</option>
-                                            <option value="3">3 — Нормально</option>
-                                            <option value="2">2 — Погано</option>
-                                            <option value="1">1 — Жахливо</option>
+                                            <option value="5">★★★★★ — Відмінно</option>
+                                            <option value="4">★★★★☆ — Добре</option>
+                                            <option value="3">★★★☆☆ — Нормально</option>
+                                            <option value="2">★★☆☆☆ — Погано</option>
+                                            <option value="1">★☆☆☆☆ — Жахливо</option>
                                         </select>
                                         @error('rating')<small class="form-error">{{ $message }}</small>@enderror
                                     </div>
-
                                     <div class="form-group">
-                                        <label for="comment">Відгук</label>
-                                        <textarea id="comment" name="comment" rows="4" placeholder="Поділись враженнями про товар">{{ old('comment') }}</textarea>
+                                        <label for="comment">Коментар</label>
+                                        <textarea id="comment" name="comment" rows="4" placeholder="Що сподобалось? Як сидить?">{{ old('comment') }}</textarea>
                                         @error('comment')<small class="form-error">{{ $message }}</small>@enderror
                                     </div>
-
-                                    <button type="submit" class="btn btn-dark">Надіслати відгук</button>
-                                </form>
-                            @else
-                                <p class="product-reviews-login">
-                                    <a href="{{ url('/login') }}">Увійди</a>, щоб залишити відгук.
-                                </p>
-                            @endauth
-                        </div>
+                                </div>
+                                <button type="submit" class="btn btn-dark">Надіслати відгук</button>
+                            </form>
+                        @else
+                            <p class="pd-reviews-login"><a href="{{ url('/login') }}">Увійди</a>, щоб залишити відгук.</p>
+                        @endauth
                     </section>
                 </div>
             </div>
-            @if (! empty($data['related']))
-                <div class="related-section">
-                    <div class="section-head">
-                        <div>
-                            <span class="section-label">RELATED</span>
-                            <h2>Схожі товари</h2>
-                        </div>
-                    </div>
-
-                    <div class="catalog-grid">
-                        @foreach ($data['related'] as $rel)
-                            <div class="catalog-card">
-                                <a href="{{ url('/product/' . (int) $rel['id']) }}" class="catalog-card-link">
-                                    <div class="catalog-card-image">
-                                        @if (! empty($rel['old_price']) && (float)$rel['old_price'] > (float)$rel['price'])
-                                            <span class="sale-badge">SALE</span>
-                                        @endif
-                                        @if (! empty($rel['image']))
-                                            <img
-                                                src="{{ asset('assets/images/products/' . $rel['image']) }}"
-                                                alt="{{ $rel['name'] }}"
-                                                class="catalog-product-image"
-                                                onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';"
-                                            >
-                                            <div class="product-image-placeholder image-fallback" style="display:none;">{{ $rel['name'] }}</div>
-                                        @else
-                                            <div class="product-image-placeholder">{{ $rel['name'] }}</div>
-                                        @endif
-                                    </div>
-                                    <div class="catalog-card-info">
-                                        <h3>{{ $rel['name'] }}</h3>
-                                        @if (! empty($rel['old_price']) && (float)$rel['old_price'] > (float)$rel['price'])
-                                            <p class="catalog-card-price">
-                                                <span class="price-sale">{{ number_format((float)$rel['price'], 0, '.', ' ') }} грн</span>
-                                                <span class="price-old">{{ number_format((float)$rel['old_price'], 0, '.', ' ') }} грн</span>
-                                            </p>
-                                        @else
-                                            <p class="catalog-card-price">{{ number_format((float)$rel['price'], 0, '.', ' ') }} грн</p>
-                                        @endif
-                                    </div>
-                                </a>
-                            </div>
-                        @endforeach
-                    </div>
-                </div>
-            @endif
         </div>
     </section>
+
+    @if (! empty($data['related']))
+        <section class="pd-related">
+            <div class="container">
+                <div class="section-head">
+                    <div>
+                        <span class="section-label">YOU MAY LIKE</span>
+                        <h2>Схожі товари</h2>
+                    </div>
+                    <a href="{{ url('/catalog?category=' . ($product['category_slug'] ?? '')) }}" class="section-link">Уся категорія →</a>
+                </div>
+
+                <div class="catalog-grid-v2">
+                    @foreach ($data['related'] as $rel)
+                        @php
+                            $relSale = ! empty($rel['old_price']) && (float) $rel['old_price'] > (float) $rel['price'];
+                            $relStock = (int) ($rel['stock'] ?? 0) > 0;
+                        @endphp
+                        <article class="catalog-item">
+                            <div class="catalog-item-media">
+                                <a href="{{ url('/product/' . (int) $rel['id']) }}" class="catalog-item-link" tabindex="-1" aria-hidden="true">
+                                    @if ($relSale)
+                                        <span class="catalog-item-badge sale">Sale</span>
+                                    @endif
+                                    @if (! empty($rel['image']))
+                                        <img src="{{ asset('assets/images/products/' . $rel['image']) }}" alt="{{ $rel['name'] }}" class="catalog-item-image" loading="lazy">
+                                    @else
+                                        <div class="catalog-item-fallback">{{ $rel['name'] }}</div>
+                                    @endif
+                                </a>
+                            </div>
+                            <div class="catalog-item-body">
+                                <h3 class="catalog-item-title">
+                                    <a href="{{ url('/product/' . (int) $rel['id']) }}">{{ $rel['name'] }}</a>
+                                </h3>
+                                <div class="catalog-item-meta">
+                                    @if ($relSale)
+                                        <p class="catalog-item-price">
+                                            <span class="price-sale">{{ number_format((float) $rel['price'], 0, '.', ' ') }} грн</span>
+                                            <span class="price-old">{{ number_format((float) $rel['old_price'], 0, '.', ' ') }} грн</span>
+                                        </p>
+                                    @else
+                                        <p class="catalog-item-price">{{ number_format((float) $rel['price'], 0, '.', ' ') }} грн</p>
+                                    @endif
+                                    <span class="catalog-item-stock {{ $relStock ? 'in' : 'out' }}">{{ $relStock ? 'В наявності' : 'Немає' }}</span>
+                                </div>
+                                <a href="{{ url('/product/' . (int) $rel['id']) }}" class="catalog-item-more">Детальніше →</a>
+                            </div>
+                        </article>
+                    @endforeach
+                </div>
+            </div>
+        </section>
+    @endif
+
+    @if ($inStock)
+        <div class="pd-mobile-bar">
+            <div class="pd-mobile-bar-inner container">
+                <div class="pd-mobile-price">{{ number_format((float) $product['price'], 0, '.', ' ') }} грн</div>
+                <button type="submit" form="productCartForm" class="btn btn-dark">В кошик</button>
+            </div>
+        </div>
+    @endif
 </main>
 
-<script>
-    // Apply color from data attribute to style
-    document.querySelectorAll('.product-color-dot[data-color]').forEach(element => {
-        element.style.background = element.dataset.color;
-    });
-
-    // Quantity control
-    (function () {
-        const input = document.getElementById('qtyInput');
-        const minus = document.getElementById('qtyMinus');
-        const plus = document.getElementById('qtyPlus');
-        if (!input) return;
-
-        const max = parseInt(input.getAttribute('max')) || 99;
-
-        minus?.addEventListener('click', function () {
-            let v = parseInt(input.value) || 1;
-            if (v > 1) input.value = v - 1;
-        });
-
-        plus?.addEventListener('click', function () {
-            let v = parseInt(input.value) || 1;
-            if (v < max) input.value = v + 1;
-        });
-    })();
-</script>
+<script src="{{ asset('assets/js/product.js') }}"></script>
 @endsection

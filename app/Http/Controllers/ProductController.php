@@ -12,7 +12,7 @@ class ProductController extends Controller
     {
         // 1. Дістаємо сам товар
         $product = Product::join('categories', 'categories.id', '=', 'products.category_id')
-            ->select('products.*', 'categories.name as category_name')
+            ->select('products.*', 'categories.name as category_name', 'categories.slug as category_slug')
             ->findOrFail($id)
             ->toArray();
 
@@ -56,6 +56,7 @@ class ProductController extends Controller
             'reviews' => $reviews,
             'avgRating' => $avgRating,
             'related' => $related,
+            'favoriteFolders' => array_keys(session('favorite_folders', ['Обране' => []])),
         ];
 
         return view('product', compact('data'));

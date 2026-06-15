@@ -12,7 +12,18 @@ class FavoritesController extends Controller
         return session('favorite_folders', ['Обране' => []]);
     }
 
-    public function index()
+    private function redirectToFavorites(?string $folder = null)
+    {
+        $url = url('/favorites');
+
+        if ($folder !== null && $folder !== '') {
+            $url .= '?folder=' . urlencode($folder);
+        }
+
+        return redirect($url);
+    }
+
+    public function index(Request $request)
     {
         $folders = $this->folders();
         $foldersData = [];
@@ -33,7 +44,16 @@ class FavoritesController extends Controller
             $foldersData[$folderName] = $items;
         }
 
-        $data = ['foldersData' => $foldersData];
+        $activeFolder = trim((string) $request->query('folder', ''));
+        if ($activeFolder === '' || ! array_key_exists($activeFolder, $foldersData)) {
+            $activeFolder = array_key_first($foldersData) ?: 'Обране';
+        }
+
+        $data = [
+            'foldersData' => $foldersData,
+            'activeFolder' => $activeFolder,
+            'activeItems' => $foldersData[$activeFolder] ?? [],
+        ];
 
         return view('favorites', compact('data'));
     }
@@ -54,11 +74,47 @@ class FavoritesController extends Controller
 
         if ($productId > 0 && ! in_array($productId, $folders[$folder], true)) {
             $folders[$folder][] = $productId;
+            session(['favorite_folders' => $folders]);
+
+            return back()->with('success', 'Додано в список «' . $folder . '»!');
         }
 
         session(['favorite_folders' => $folders]);
 
-        return back()->with('success', 'Додано в обране!');
+        return back()->with('success', 'Товар уже є в списку «' . $folder . '».');
+    }
+
+    public function move(Request $request)
+    {
+        $productId = (int) $request->input('product_id');
+        $fromFolder = trim((string) $request->input('from_folder', ''));
+        $toFolder = trim((string) $request->input('to_folder', ''));
+
+        $folders = $this->folders();
+
+        if ($productId <= 0 || $fromFolder === '' || $toFolder === '' || $fromFolder === $toFolder) {
+            return $this->redirectToFavorites($fromFolder !== '' ? $fromFolder : null);
+        }
+
+        if (! isset($folders[$fromFolder]) || ! isset($folders[$toFolder])) {
+            return $this->redirectToFavorites($fromFolder);
+        }
+
+        $folders[$fromFolder] = array_values(array_filter(
+            $folders[$fromFolder],
+            fn ($id) => (int) $id !== $productId
+        ));
+
+        if (! in_array($productId, $folders[$toFolder], true)) {
+            $folders[$toFolder][] = $productId;
+        }
+
+        session(['favorite_folders' => $folders]);
+
+        return $this->redirectToFavorites($fromFolder)->with(
+            'success',
+            'Товар переміщено в «' . $toFolder . '».'
+        );
     }
 
     public function createFolder(Request $request)
@@ -72,7 +128,7 @@ class FavoritesController extends Controller
 
         session(['favorite_folders' => $folders]);
 
-        return redirect('/favorites');
+        return $this->redirectToFavorites($folderName !== '' ? $folderName : null);
     }
 
     public function remove(Request $request)
@@ -90,7 +146,7 @@ class FavoritesController extends Controller
 
         session(['favorite_folders' => $folders]);
 
-        return redirect('/favorites');
+        return $this->redirectToFavorites($folder !== '' ? $folder : null);
     }
 
     public function clearFolder(Request $request)
@@ -104,7 +160,7 @@ class FavoritesController extends Controller
 
         session(['favorite_folders' => $folders]);
 
-        return redirect('/favorites');
+        return $this->redirectToFavorites($folder !== '' ? $folder : null);
     }
 
     public function deleteFolder(Request $request)
@@ -118,6 +174,6 @@ class FavoritesController extends Controller
 
         session(['favorite_folders' => $folders]);
 
-        return redirect('/favorites');
+        return $this->redirectToFavorites('Обране');
     }
 }

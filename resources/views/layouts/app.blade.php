@@ -127,55 +127,76 @@
 
 @yield('content')
 
-<footer class="site-footer">
-    <div class="container footer-container">
-        <div class="footer-brand">
-            <h3>CLOTHSTORE</h3>
-            <p>Сучасний магазин стильного одягу з мінімалістичним дизайном, зручним інтерфейсом і основою для подальшого розвитку.</p>
+<footer class="site-footer site-footer-v2">
+    <div class="footer-top-strip">
+        <div class="container footer-top-strip-inner">
+            <span>Нова колекція вже в каталозі</span>
+            <a href="{{ url('/new') }}" class="footer-top-link">Дивитись новинки →</a>
+        </div>
+    </div>
+
+    <div class="container footer-v2-grid">
+        <div class="footer-v2-brand">
+            <a href="{{ url('/') }}" class="footer-logo">CLOTH<span>STORE</span></a>
+            <p>Сучасний одяг у мінімалістичному стилі. Зручний онлайн-магазин з доставкою по всій Україні.</p>
+            <a href="https://www.instagram.com/tori_cloth.store?utm_source=qr" target="_blank" rel="noopener" class="footer-social-v2" aria-label="Instagram">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="2" width="20" height="20" rx="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>
+                @tori_cloth.store
+            </a>
         </div>
 
-        <div class="footer-column">
-            <h4>Навігація</h4>
-            <a href="{{ url('/') }}">Головна</a>
-            <a href="{{ url('/catalog') }}">Каталог</a>
-            <a href="{{ url('/new') }}">Новинки</a>
-            <a href="{{ url('/about') }}">Про нас</a>
+        <div class="footer-v2-col">
+            <h4>Магазин</h4>
+            <nav class="footer-v2-links">
+                <a href="{{ url('/') }}">Головна</a>
+                <a href="{{ url('/catalog') }}">Каталог</a>
+                <a href="{{ url('/new') }}">Новинки</a>
+                <a href="{{ url('/favorites') }}">Обране</a>
+                <a href="{{ url('/cart') }}">Кошик</a>
+            </nav>
         </div>
 
-        <div class="footer-column">
+        <div class="footer-v2-col">
             <h4>Інформація</h4>
-            <a href="{{ url('/about') }}">Про нас</a>
-            <a href="{{ url('/cooperation') }}">Співробітництво</a>
-            <a href="{{ url('/privacy') }}">Політика конфіденційності</a>
-            <a href="{{ url('/favorites') }}">Обране</a>
-            <a href="{{ url('/cart') }}">Кошик</a>
-            @guest
-                <a href="{{ url('/login') }}">Увійти</a>
-            @endguest
+            <nav class="footer-v2-links">
+                <a href="{{ url('/about') }}">Про нас</a>
+                <a href="{{ url('/cooperation') }}">Співробітництво</a>
+                <a href="{{ url('/privacy') }}">Політика конфіденційності</a>
+                @guest
+                    <a href="{{ url('/login') }}">Увійти</a>
+                    <a href="{{ url('/register') }}">Реєстрація</a>
+                @endguest
+            </nav>
         </div>
 
-        <div class="footer-column">
+        <div class="footer-v2-col">
             <h4>Контакти</h4>
-            <p>Email: info@clothstore.local</p>
-            <p>Телефон: +380 99 000 00 00</p>
-            <p>Україна</p>
-
-            <div class="footer-socials">
-                <a href="https://www.instagram.com/tori_cloth.store?utm_source=qr" target="_blank" rel="noopener" class="footer-social" aria-label="Instagram">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                        <rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect>
-                        <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path>
-                        <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line>
-                    </svg>
-                    <span>@tori_cloth.store</span>
-                </a>
+            <ul class="footer-v2-contacts">
+                <li>
+                    <span class="footer-contact-label">Email</span>
+                    <a href="mailto:info@clothstore.local">info@clothstore.local</a>
+                </li>
+                <li>
+                    <span class="footer-contact-label">Телефон</span>
+                    <a href="tel:+380990000000">+380 99 000 00 00</a>
+                </li>
+                <li>
+                    <span class="footer-contact-label">Локація</span>
+                    <span>Україна</span>
+                </li>
+            </ul>
+            <div class="footer-v2-badges">
+                <span>Nova Poshta</span>
+                <span>Ukrposhta</span>
+                <span>Meest</span>
             </div>
         </div>
     </div>
 
-    <div class="footer-bottom">
-        <div class="container footer-bottom-inner">
+    <div class="footer-v2-bottom">
+        <div class="container footer-v2-bottom-inner">
             <p>© {{ date('Y') }} ClothStore. Усі права захищені.</p>
+            <a href="{{ url('/catalog') }}" class="footer-v2-cta">Перейти до покупок</a>
         </div>
     </div>
 </footer>
