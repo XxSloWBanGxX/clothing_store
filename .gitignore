@@ -18,7 +18,7 @@
 /public/storage
 /storage/*.key
 /storage/pail
-/vendor
+/config/google.local.php
 Homestead.json
 Homestead.yaml
 Thumbs.db

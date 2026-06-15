@@ -143,13 +143,14 @@
         </div>
 
         <div class="footer-column">
-            <h4>Користувач</h4>
-            <a href="{{ url('/profile') }}">Профіль</a>
+            <h4>Інформація</h4>
+            <a href="{{ url('/about') }}">Про нас</a>
+            <a href="{{ url('/cooperation') }}">Співробітництво</a>
+            <a href="{{ url('/privacy') }}">Політика конфіденційності</a>
             <a href="{{ url('/favorites') }}">Обране</a>
             <a href="{{ url('/cart') }}">Кошик</a>
             @guest
                 <a href="{{ url('/login') }}">Увійти</a>
-                <a href="{{ url('/register') }}">Реєстрація</a>
             @endguest
         </div>
 
@@ -158,6 +159,17 @@
             <p>Email: info@clothstore.local</p>
             <p>Телефон: +380 99 000 00 00</p>
             <p>Україна</p>
+
+            <div class="footer-socials">
+                <a href="https://www.instagram.com/tori_cloth.store?utm_source=qr" target="_blank" rel="noopener" class="footer-social" aria-label="Instagram">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect>
+                        <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path>
+                        <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line>
+                    </svg>
+                    <span>@tori_cloth.store</span>
+                </a>
+            </div>
         </div>
     </div>
 

@@ -21,7 +21,7 @@ class AuthController extends Controller
             'login' => ['required', 'string'],
             'password' => ['required', 'string'],
         ], [
-            'login.required' => 'Введи email або username',
+            'login.required' => 'Введи email, телефон або username',
             'password.required' => 'Введи пароль',
         ]);
 
@@ -30,12 +30,13 @@ class AuthController extends Controller
 
         $user = User::where('email', $login)
             ->orWhere('username', $login)
+            ->orWhere('phone', $login)
             ->first();
 
         if (! $user || ! Hash::check($password, $user->password)) {
             return back()
                 ->withInput($request->only('login'))
-                ->withErrors(['general' => 'Невірний email, username або пароль']);
+                ->withErrors(['general' => 'Невірний email, телефон, username або пароль']);
         }
 
         Auth::login($user);

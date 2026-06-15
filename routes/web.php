@@ -2,6 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\SocialAuthController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\CatalogController;
 use App\Http\Controllers\ProductController;
@@ -23,6 +24,9 @@ Route::get('/new', [NewController::class, 'index']);
 Route::get('/about', [AboutController::class, 'index']);
 
 Route::post('/support', [SupportController::class, 'store']);
+
+Route::view('/privacy', 'privacy');
+Route::view('/cooperation', 'cooperation');
 
 Route::get('/cart', [CartController::class, 'index']);
 Route::post('/cart/add', [CartController::class, 'add']);
@@ -57,6 +61,9 @@ Route::middleware('guest')->group(function () {
     Route::get('/register', [AuthController::class, 'showRegister']);
     Route::post('/register', [AuthController::class, 'register']);
 });
+
+Route::get('/auth/google/redirect', [SocialAuthController::class, 'redirect']);
+Route::get('/auth/google/callback', [SocialAuthController::class, 'callback']);
 
 Route::post('/logout', [AuthController::class, 'logout'])->middleware('auth');
 

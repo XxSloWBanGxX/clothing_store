@@ -35,4 +35,19 @@ return [
         ],
     ],
 
+    'google' => (function () {
+        $local = [];
+        $localPath = __DIR__ . '/google.local.php';
+
+        if (is_file($localPath)) {
+            $local = require $localPath;
+        }
+
+        return [
+            'client_id' => env('GOOGLE_CLIENT_ID') ?: ($local['client_id'] ?? ''),
+            'client_secret' => env('GOOGLE_CLIENT_SECRET') ?: ($local['client_secret'] ?? ''),
+            'redirect' => env('GOOGLE_REDIRECT_URI') ?: ($local['redirect'] ?? env('APP_URL', 'http://127.0.0.1:8000') . '/auth/google/callback'),
+        ];
+    })(),
+
 ];
