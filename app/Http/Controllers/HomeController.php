@@ -7,6 +7,7 @@ use App\Services\PricingService;
 use App\Services\RecentlyViewedService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 class HomeController extends Controller
 {
@@ -48,10 +49,14 @@ class HomeController extends Controller
                 return $cat;
             });
 
+        $hasNewFlag = Schema::hasColumn('products', 'is_new')
+            && DB::table('products')->where('is_new', 1)->exists();
+
         $newProducts = DB::table('products')
             ->join('categories', 'categories.id', '=', 'products.category_id')
             ->select('products.*', 'categories.name as category_name')
-            ->orderBy('products.id', 'desc')
+            ->when($hasNewFlag, fn ($q) => $q->where('products.is_new', 1))
+            ->orderByDesc('products.id')
             ->take(8)
             ->get();
         $newProducts = json_decode(json_encode($newProducts), true);

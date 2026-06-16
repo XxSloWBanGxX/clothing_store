@@ -15,7 +15,8 @@ class SaleController extends Controller
     {
         $activeSales = $this->pricing->getActiveSales();
         $scheduledSales = $this->pricing->getScheduledSales();
-        $productsOnSale = $this->pricing->getProductsOnSale(48);
+        $paginator = $this->pricing->paginateProductsOnSale(12);
+        $productsOnSale = $paginator->items();
 
         $categories = DB::table('categories')->orderBy('name')->get();
 
@@ -25,6 +26,7 @@ class SaleController extends Controller
             'activeSales' => $activeSales,
             'scheduledSales' => $scheduledSales,
             'products' => $productsOnSale,
+            'paginator' => $paginator,
             'categories' => $categories,
             'favoriteFolders' => $favoriteFolders,
             'serverNow' => $this->pricing->now()->toIso8601String(),

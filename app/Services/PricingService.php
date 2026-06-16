@@ -4,6 +4,8 @@ namespace App\Services;
 
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
+use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Pagination\Paginator;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
@@ -152,7 +154,40 @@ class PricingService
     /**
      * @return array<int, array<string, mixed>>
      */
-    public function getProductsOnSale(int $limit = 48): array
+    public function getProductsOnSale(?int $limit = null): array
+    {
+        $onSale = $this->collectProductsOnSale();
+
+        if ($limit !== null) {
+            return array_slice($onSale, 0, $limit);
+        }
+
+        return $onSale;
+    }
+
+    public function paginateProductsOnSale(int $perPage = 12): LengthAwarePaginator
+    {
+        $onSale = $this->collectProductsOnSale();
+        $page = Paginator::resolveCurrentPage('page');
+        $total = count($onSale);
+        $items = array_slice($onSale, ($page - 1) * $perPage, $perPage);
+
+        return new LengthAwarePaginator(
+            $items,
+            $total,
+            $perPage,
+            $page,
+            [
+                'path' => Paginator::resolveCurrentPath(),
+                'query' => request()->query(),
+            ]
+        );
+    }
+
+    /**
+     * @return array<int, array<string, mixed>>
+     */
+    private function collectProductsOnSale(): array
     {
         if (! Schema::hasTable('products')) {
             return [];
@@ -177,7 +212,7 @@ class PricingService
 
         usort($onSale, fn ($a, $b) => ($b['discount_percent'] ?? 0) <=> ($a['discount_percent'] ?? 0));
 
-        return array_slice($onSale, 0, $limit);
+        return $onSale;
     }
 
     public function makeSlug(string $title): string

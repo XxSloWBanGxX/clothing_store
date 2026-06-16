@@ -80,7 +80,6 @@
                                 alt="{{ $product['name'] }}"
                                 class="product-gallery-main-image pd-gallery-image"
                                 data-current-index="0"
-                                onerror="this.style.display='none'; document.getElementById('mainProductFallback').style.display='flex';"
                             >
                             <div id="mainProductFallback" class="pd-gallery-fallback" style="display:none;">{{ $product['name'] }}</div>
 
@@ -92,7 +91,7 @@
                                 @foreach ($gallery as $index => $imgPath)
                                     <button
                                         type="button"
-                                        class="product-gallery-thumb pd-gallery-thumb {{ $index === 0 ? 'active' : '' }}"
+                                        class="pd-gallery-thumb {{ $index === 0 ? 'active' : '' }}"
                                         data-index="{{ $index }}"
                                         data-image-src="{{ asset('assets/images/products/' . $imgPath) }}"
                                         aria-label="Фото {{ $index + 1 }}"

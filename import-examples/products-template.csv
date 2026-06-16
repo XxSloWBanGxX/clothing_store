@@ -1,0 +1,6 @@
+name,category_slug,price,old_price,stock,description,sizes,colors,main_image,gallery_images,is_featured
+"Худі Oversize Black",hoodies,1299,1599,15,"М'який cotton худі oversize","S|M|L|XL","Чорний|Сірий",hoodie-black.jpg,"hoodie-black-2.jpg|hoodie-black-3.jpg",1
+"Футболка Basic White",t-shirts,599,,25,"Базова бавовняна футболка","S|M|L|XL","Білий|Чорний",tee-white.jpg,,0
+"Світшот Classic Grey",sweatshirts,999,1199,12,"Теплий світшот на кожен день","S|M|L","Сірий|Чорний",sweat-grey.jpg,sweat-grey-2.jpg,0
+"Куртка Windbreaker Blue",jackets,2499,2999,8,"Легка вітровка","S|M|L","Синій|Чорний",jacket-blue.jpg,jacket-blue-2.jpg,1
+"Штани Cargo Khaki",pants,1599,,10,"Cargo штани з кишенями","S|M|L|XL",Хакі,pants-khaki.jpg,,0

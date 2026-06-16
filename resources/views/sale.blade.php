@@ -5,9 +5,11 @@
 @section('content')
 @php
     $products = $data['products'] ?? [];
+    $paginator = $data['paginator'] ?? null;
     $activeSales = $data['activeSales'] ?? collect();
     $scheduledSales = $data['scheduledSales'] ?? collect();
     $serverNow = $data['serverNow'] ?? now()->toIso8601String();
+    $totalOnSale = $paginator ? $paginator->total() : count($products);
 @endphp
 
 <main class="page-main">
@@ -63,7 +65,7 @@
         <div class="container">
             <div class="catalog-head">
                 <h2>Товари зі знижкою</h2>
-                <p>{{ count($products) }} позицій</p>
+                <p>{{ $totalOnSale }} {{ $totalOnSale === 1 ? 'позиція' : ($totalOnSale < 5 ? 'позиції' : 'позицій') }}</p>
             </div>
 
             @if (! empty($products))
@@ -131,6 +133,12 @@
                         </article>
                     @endforeach
                 </div>
+
+                @if ($paginator && $paginator->hasPages())
+                    <div class="catalog-pagination-wrap">
+                        {{ $paginator->onEachSide(1)->links('vendor.pagination.custom') }}
+                    </div>
+                @endif
             @else
                 <div class="catalog-empty">
                     <div class="catalog-empty-icon">🏷</div>

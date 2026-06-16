@@ -3,51 +3,102 @@ document.addEventListener('DOMContentLoaded', function () {
         element.style.background = element.dataset.color;
     });
 
+    const galleryRoot = document.querySelector('.product-page-v2 .pd-gallery');
+    if (!galleryRoot) {
+        return;
+    }
+
     const galleryCounter = document.getElementById('galleryCounter');
-    const thumbButtons = Array.from(document.querySelectorAll('.product-gallery-thumb'));
+    const thumbButtons = Array.from(galleryRoot.querySelectorAll('.pd-gallery-thumb'));
     const mainImage = document.getElementById('mainProductImage');
     const mainFallback = document.getElementById('mainProductFallback');
     const prevBtn = document.getElementById('productPrevImage');
     const nextBtn = document.getElementById('productNextImage');
 
+    let currentIndex = parseInt(mainImage?.getAttribute('data-current-index') || '0', 10);
+
     const updateGalleryCounter = (index) => {
-        if (!galleryCounter || !thumbButtons.length) return;
+        if (!galleryCounter || !thumbButtons.length) {
+            return;
+        }
         galleryCounter.textContent = `${index + 1} / ${thumbButtons.length}`;
     };
 
-    const setGalleryImage = (index) => {
-        if (!thumbButtons.length || !mainImage) return;
+    const showFallback = () => {
+        if (mainImage) {
+            mainImage.style.display = 'none';
+            mainImage.classList.remove('is-visible');
+        }
+        if (mainFallback) {
+            mainFallback.style.display = 'flex';
+        }
+    };
 
-        const safeIndex = (index + thumbButtons.length) % thumbButtons.length;
-        const thumb = thumbButtons[safeIndex];
-        const src = thumb.getAttribute('data-image-src');
-        if (!src) return;
-
-        mainImage.style.display = 'block';
-        mainImage.src = src;
-        mainImage.setAttribute('data-current-index', String(safeIndex));
-
+    const showImage = () => {
+        if (mainImage) {
+            mainImage.style.display = 'block';
+            mainImage.classList.add('is-visible');
+        }
         if (mainFallback) {
             mainFallback.style.display = 'none';
         }
+    };
+
+    const setGalleryImage = (index) => {
+        if (!thumbButtons.length || !mainImage) {
+            return;
+        }
+
+        const safeIndex = ((index % thumbButtons.length) + thumbButtons.length) % thumbButtons.length;
+        const thumb = thumbButtons[safeIndex];
+        const src = thumb.getAttribute('data-image-src');
+
+        if (!src) {
+            return;
+        }
+
+        if (safeIndex === currentIndex && mainImage.src === src && mainImage.classList.contains('is-visible')) {
+            return;
+        }
+
+        currentIndex = safeIndex;
+        mainImage.setAttribute('data-current-index', String(safeIndex));
 
         thumbButtons.forEach((item) => item.classList.remove('active'));
         thumb.classList.add('active');
+        thumb.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
         updateGalleryCounter(safeIndex);
+
+        mainImage.classList.remove('is-visible');
+        mainImage.onload = showImage;
+        mainImage.onerror = showFallback;
+        mainImage.src = src;
     };
+
+    if (mainImage) {
+        mainImage.onload = showImage;
+        mainImage.onerror = showFallback;
+        if (mainImage.complete && mainImage.naturalWidth > 0) {
+            showImage();
+        }
+    }
 
     thumbButtons.forEach((btn, index) => {
         btn.addEventListener('click', () => setGalleryImage(index));
     });
 
-    prevBtn?.addEventListener('click', () => {
-        const current = parseInt(mainImage?.getAttribute('data-current-index') || '0', 10);
-        setGalleryImage(current - 1);
-    });
+    prevBtn?.addEventListener('click', () => setGalleryImage(currentIndex - 1));
+    nextBtn?.addEventListener('click', () => setGalleryImage(currentIndex + 1));
 
-    nextBtn?.addEventListener('click', () => {
-        const current = parseInt(mainImage?.getAttribute('data-current-index') || '0', 10);
-        setGalleryImage(current + 1);
+    document.addEventListener('keydown', (event) => {
+        if (['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement?.tagName || '')) {
+            return;
+        }
+        if (event.key === 'ArrowLeft') {
+            setGalleryImage(currentIndex - 1);
+        } else if (event.key === 'ArrowRight') {
+            setGalleryImage(currentIndex + 1);
+        }
     });
 
     const selectedSizeInput = document.getElementById('selectedSizeInput');
@@ -57,8 +108,12 @@ document.addEventListener('DOMContentLoaded', function () {
             document.querySelectorAll('.product-size-btn').forEach((item) => item.classList.remove('active'));
             this.classList.add('active');
             const size = this.getAttribute('data-size') || '';
-            if (selectedSizeInput) selectedSizeInput.value = size;
-            if (selectedSizeLabel) selectedSizeLabel.textContent = size;
+            if (selectedSizeInput) {
+                selectedSizeInput.value = size;
+            }
+            if (selectedSizeLabel) {
+                selectedSizeLabel.textContent = size;
+            }
         });
     });
 
@@ -71,9 +126,15 @@ document.addEventListener('DOMContentLoaded', function () {
             this.classList.add('active');
             const name = this.getAttribute('data-color-name') || '';
             const hex = this.getAttribute('data-color-hex') || '';
-            if (selectedColorNameInput) selectedColorNameInput.value = name;
-            if (selectedColorHexInput) selectedColorHexInput.value = hex;
-            if (selectedColorLabel) selectedColorLabel.textContent = name;
+            if (selectedColorNameInput) {
+                selectedColorNameInput.value = name;
+            }
+            if (selectedColorHexInput) {
+                selectedColorHexInput.value = hex;
+            }
+            if (selectedColorLabel) {
+                selectedColorLabel.textContent = name;
+            }
         });
     });
 
@@ -95,13 +156,17 @@ document.addEventListener('DOMContentLoaded', function () {
         const max = parseInt(qtyInput.getAttribute('max'), 10) || 99;
 
         qtyMinus?.addEventListener('click', () => {
-            let value = parseInt(qtyInput.value, 10) || 1;
-            if (value > 1) qtyInput.value = value - 1;
+            const value = parseInt(qtyInput.value, 10) || 1;
+            if (value > 1) {
+                qtyInput.value = value - 1;
+            }
         });
 
         qtyPlus?.addEventListener('click', () => {
-            let value = parseInt(qtyInput.value, 10) || 1;
-            if (value < max) qtyInput.value = value + 1;
+            const value = parseInt(qtyInput.value, 10) || 1;
+            if (value < max) {
+                qtyInput.value = value + 1;
+            }
         });
     }
 });

@@ -244,6 +244,7 @@
                         @foreach ($products as $product)
                             @php
                                 $onSale = ! empty($product['on_sale']);
+                                $isNew = ! empty($product['is_new']);
                                 $inStock = (int) ($product['stock'] ?? 0) > 0;
                             @endphp
                             <article class="catalog-item">
@@ -265,7 +266,9 @@
                                     </div>
 
                                     <a href="{{ url('/product/' . $product['id']) }}" class="catalog-item-link" tabindex="-1" aria-hidden="true">
-                                        @if ($onSale)
+                                        @if ($isNew)
+                                            <span class="catalog-item-badge new">New</span>
+                                        @elseif ($onSale)
                                             <span class="catalog-item-badge sale">Sale</span>
                                         @endif
 
