@@ -215,15 +215,32 @@
                             <span>Товари</span>
                             <strong>{{ number_format((float) $total, 0, '.', ' ') }} грн</strong>
                         </div>
+                        @if (($discount ?? 0) > 0)
+                            <div class="checkout-summary-line checkout-summary-line--discount">
+                                <span>Знижка@if(!empty($promoApplied['code'])) ({{ $promoApplied['code'] }})@endif</span>
+                                <strong>−{{ number_format((float) $discount, 0, '.', ' ') }} грн</strong>
+                            </div>
+                        @endif
                         <div class="checkout-summary-line">
                             <span>Доставка</span>
                             <strong>За тарифами перевізника</strong>
                         </div>
                     </div>
 
+                    <div class="checkout-promo">
+                        <label for="promo_code">Промокод</label>
+                        <div class="checkout-promo-row">
+                            <input type="text" id="promo_code" name="promo_code" value="{{ old('promo_code', $promoCode ?? '') }}" placeholder="WELCOME10">
+                        </div>
+                        @error('promo_code')<small class="form-error">{{ $message }}</small>@enderror
+                        @if (! empty($promoApplied['valid']))
+                            <small class="checkout-promo-ok">Застосовано: {{ $promoApplied['title'] ?? $promoApplied['code'] }} (−{{ (int) ($promoApplied['discount_percent'] ?? 0) }}%)</small>
+                        @endif
+                    </div>
+
                     <div class="checkout-summary-total">
                         <span>До сплати</span>
-                        <strong id="checkoutTotal">{{ number_format((float) $total, 0, '.', ' ') }} грн</strong>
+                        <strong id="checkoutTotal">{{ number_format((float) ($finalTotal ?? $total), 0, '.', ' ') }} грн</strong>
                     </div>
 
                     <button type="submit" class="btn btn-dark checkout-submit" id="checkoutSubmitBtn">Оплатити та підтвердити</button>

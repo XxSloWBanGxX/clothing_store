@@ -2,9 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Services\SiteSettings;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 class ReviewController extends Controller
 {
@@ -25,15 +27,25 @@ class ReviewController extends Controller
             'comment.min' => 'Відгук занадто короткий',
         ]);
 
-        DB::table('reviews')->insert([
+        $row = [
             'product_id' => (int) $productId,
             'user_id' => Auth::id(),
             'author_name' => Auth::user()->name ?? 'Користувач',
             'rating' => (int) $validated['rating'],
             'comment' => $validated['comment'],
             'created_at' => now(),
-        ]);
+        ];
 
-        return back()->with('reviewSuccess', 'Дякуємо за відгук!');
+        if (Schema::hasColumn('reviews', 'is_approved')) {
+            $row['is_approved'] = SiteSettings::reviewsModerationEnabled() ? 0 : 1;
+        }
+
+        DB::table('reviews')->insert($row);
+
+        $message = SiteSettings::reviewsModerationEnabled()
+            ? 'Дякуємо! Відгук зʼявиться на сайті після модерації.'
+            : 'Дякуємо за відгук!';
+
+        return back()->with('reviewSuccess', $message);
     }
 }

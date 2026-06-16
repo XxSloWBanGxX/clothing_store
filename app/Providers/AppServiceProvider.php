@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use App\Services\SiteSettings;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\View;
@@ -47,6 +48,7 @@ class AppServiceProvider extends ServiceProvider
                 'navCategories' => $navCategories,
                 'cartCount' => $cartCount,
                 'favCount' => $favCount,
+                'site' => SiteSettings::all(),
             ]);
         });
 
@@ -65,6 +67,10 @@ class AppServiceProvider extends ServiceProvider
                         ->where('sender_role', 'user')
                         ->whereNull('read_at')
                         ->count();
+                }
+
+                if (Schema::hasTable('reviews') && Schema::hasColumn('reviews', 'is_approved')) {
+                    $adminNav['reviews_pending'] = (int) DB::table('reviews')->where('is_approved', 0)->count();
                 }
             } catch (\Throwable $e) {
                 //

@@ -39,6 +39,15 @@
             <div><dt>Адреса</dt><dd>{{ $order->address_line ?: '—' }}</dd></div>
             <div><dt>Доставка</dt><dd>{{ $deliveryLabel }}</dd></div>
             <div><dt>Оплата</dt><dd>{{ $paymentLabel }}</dd></div>
+            @if (! empty($order->payment_status))
+                <div><dt>Статус оплати</dt><dd>{{ $order->payment_status === 'paid' ? 'Оплачено' : 'Очікує' }}</dd></div>
+            @endif
+            @if (! empty($order->promocode))
+                <div><dt>Промокод</dt><dd>{{ $order->promocode }}@if(!empty($order->discount_amount) && (float)$order->discount_amount > 0) (−{{ number_format((float)$order->discount_amount, 0, '.', ' ') }} грн)@endif</dd></div>
+            @endif
+            @if (! empty($order->card_last4))
+                <div><dt>Картка</dt><dd>•••• {{ $order->card_last4 }}</dd></div>
+            @endif
             <div><dt>Коментар</dt><dd>{{ $order->comment ?: '—' }}</dd></div>
         </dl>
     </section>

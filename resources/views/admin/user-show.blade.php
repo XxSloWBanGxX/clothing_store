@@ -39,6 +39,7 @@
         </div>
     </div>
     <div class="adm-panel-actions">
+        <a href="{{ url('/admin/users/' . $user->id . '/edit') }}" class="btn btn-dark btn-sm">Редагувати</a>
         <a href="{{ url('/admin/messages') }}" class="btn btn-light btn-sm">✉ Повідомлення</a>
         @if ((int) $user->id !== (int) auth()->id())
             <form action="{{ url('/admin/users/' . $user->id) }}" method="POST" onsubmit="return confirm('Видалити користувача?');">

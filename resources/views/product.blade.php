@@ -234,21 +234,21 @@
                             <span class="pd-trust-icon">🚚</span>
                             <div>
                                 <strong>Доставка</strong>
-                                <p>Нова Пошта, Укрпошта, Meest</p>
+                                <p>{{ $site['shipping_info'] ?? 'Нова Пошта, Укрпошта, Meest' }}</p>
                             </div>
                         </div>
                         <div class="pd-trust-item">
                             <span class="pd-trust-icon">💳</span>
                             <div>
                                 <strong>Оплата</strong>
-                                <p>Онлайн або при отриманні</p>
+                                <p>{{ $site['trust_payment_text'] ?? 'Онлайн або при отриманні' }}</p>
                             </div>
                         </div>
                         <div class="pd-trust-item">
                             <span class="pd-trust-icon">↩</span>
                             <div>
                                 <strong>Повернення</strong>
-                                <p>14 днів без зайвих питань</p>
+                                <p>{{ $site['returns_info'] ?? '14 днів без зайвих питань' }}</p>
                             </div>
                         </div>
                     </div>

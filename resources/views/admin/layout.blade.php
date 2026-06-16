@@ -48,6 +48,9 @@
                 <a href="{{ url('/admin/reviews') }}" class="adm-nav-link {{ request()->is('admin/reviews*') ? 'is-active' : '' }}">
                     <span class="adm-nav-icon">★</span>
                     <span>Відгуки</span>
+                    @if (($navCounts['reviews_pending'] ?? 0) > 0)
+                        <span class="adm-nav-badge">{{ (int) $navCounts['reviews_pending'] }}</span>
+                    @endif
                 </a>
             </div>
 
@@ -68,6 +71,26 @@
                 <a href="{{ url('/admin/categories') }}" class="adm-nav-link {{ request()->is('admin/categories*') ? 'is-active' : '' }}">
                     <span class="adm-nav-icon">☰</span>
                     <span>Категорії</span>
+                </a>
+            </div>
+
+            <div class="adm-nav-group">
+                <span class="adm-nav-label">Сайт</span>
+                <a href="{{ url('/admin/settings') }}" class="adm-nav-link {{ request()->is('admin/settings*') ? 'is-active' : '' }}">
+                    <span class="adm-nav-icon">⚙</span>
+                    <span>Налаштування</span>
+                </a>
+                <a href="{{ url('/admin/pages') }}" class="adm-nav-link {{ request()->is('admin/pages*') ? 'is-active' : '' }}">
+                    <span class="adm-nav-icon">📄</span>
+                    <span>Сторінки</span>
+                </a>
+                <a href="{{ url('/admin/promocodes') }}" class="adm-nav-link {{ request()->is('admin/promocodes*') ? 'is-active' : '' }}">
+                    <span class="adm-nav-icon">🏷</span>
+                    <span>Промокоди</span>
+                </a>
+                <a href="{{ url('/admin/newsletter') }}" class="adm-nav-link {{ request()->is('admin/newsletter*') ? 'is-active' : '' }}">
+                    <span class="adm-nav-icon">📧</span>
+                    <span>Розсилка</span>
                 </a>
             </div>
 

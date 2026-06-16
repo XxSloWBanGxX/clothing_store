@@ -26,8 +26,14 @@ class ProductController extends Controller
         $avgRating = 0;
 
         try {
+            $reviewsQuery = DB::table('reviews')->where('product_id', $id);
+
+            if (\Illuminate\Support\Facades\Schema::hasColumn('reviews', 'is_approved')) {
+                $reviewsQuery->where('is_approved', 1);
+            }
+
             $reviews = json_decode(json_encode(
-                DB::table('reviews')->where('product_id', $id)->orderBy('id', 'desc')->get()
+                $reviewsQuery->orderBy('id', 'desc')->get()
             ), true);
 
             if (! empty($reviews)) {

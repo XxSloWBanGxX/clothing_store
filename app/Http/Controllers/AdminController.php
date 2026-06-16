@@ -532,6 +532,45 @@ class AdminController extends Controller
         return redirect('/admin/categories')->with('status', 'Категорію створено');
     }
 
+    public function editCategory($id)
+    {
+        $category = DB::table('categories')->where('id', $id)->first();
+
+        if (! $category) {
+            abort(404);
+        }
+
+        return view('admin.category-edit', compact('category'));
+    }
+
+    public function updateCategory(Request $request, $id)
+    {
+        $category = DB::table('categories')->where('id', $id)->first();
+
+        if (! $category) {
+            abort(404);
+        }
+
+        $validated = $request->validate([
+            'name' => ['required', 'string', 'max:100'],
+        ], [
+            'name.required' => 'Введи назву категорії',
+        ]);
+
+        $slug = $this->makeSlug($request->input('slug') ?: $validated['name']);
+
+        if (DB::table('categories')->where('slug', $slug)->where('id', '!=', $id)->exists()) {
+            return back()->withInput()->withErrors(['slug' => 'Категорія з таким slug вже існує']);
+        }
+
+        DB::table('categories')->where('id', $id)->update([
+            'name' => $validated['name'],
+            'slug' => $slug,
+        ]);
+
+        return redirect('/admin/categories')->with('status', 'Категорію оновлено');
+    }
+
     public function destroyCategory($id)
     {
         $count = DB::table('products')->where('category_id', $id)->count();
@@ -720,6 +759,57 @@ class AdminController extends Controller
         return redirect('/admin/users')->with('status', 'Користувача створено');
     }
 
+    public function editUser($id)
+    {
+        $user = DB::table('users')->where('id', $id)->first();
+
+        if (! $user) {
+            abort(404);
+        }
+
+        return view('admin.user-edit', compact('user'));
+    }
+
+    public function updateUser(Request $request, $id)
+    {
+        $user = DB::table('users')->where('id', $id)->first();
+
+        if (! $user) {
+            abort(404);
+        }
+
+        $validated = $request->validate([
+            'name' => ['required', 'string', 'max:100'],
+            'username' => ['required', 'string', 'min:3', 'max:50', Rule::unique('users', 'username')->ignore($id)],
+            'email' => ['required', 'email', 'max:120', Rule::unique('users', 'email')->ignore($id)],
+            'phone' => ['required', 'string', 'max:20', Rule::unique('users', 'phone')->ignore($id)],
+            'role' => ['required', Rule::in(['user', 'admin', 'support'])],
+            'bonus_points' => ['nullable', 'integer', 'min:0'],
+        ]);
+
+        $update = [
+            'name' => $validated['name'],
+            'username' => $validated['username'],
+            'email' => $validated['email'],
+            'phone' => $validated['phone'],
+            'role' => $validated['role'],
+            'is_verified' => $request->boolean('is_verified') ? 1 : 0,
+        ];
+
+        if (Schema::hasColumn('users', 'bonus_points')) {
+            $update['bonus_points'] = (int) ($validated['bonus_points'] ?? 0);
+        }
+
+        if ($request->filled('password')) {
+            $request->validate(['password' => ['string', 'min:6']]);
+            $update['password'] = Hash::make($request->input('password'));
+        }
+
+        DB::table('users')->where('id', $id)->update($update);
+
+        return redirect('/admin/users/' . $id)->with('status', 'Користувача оновлено');
+    }
+
     public function destroyUser(Request $request, $id)
     {
         if ((int) $id !== (int) $request->user()->id) {
@@ -731,17 +821,38 @@ class AdminController extends Controller
 
     public function reviews()
     {
-        $reviews = DB::table('reviews')
+        $statusFilter = request()->query('status', '');
+
+        $query = DB::table('reviews')
             ->join('products', 'products.id', '=', 'reviews.product_id')
             ->select(
                 'reviews.*',
                 'products.name as product_name',
                 'products.slug as product_slug'
             )
-            ->orderByDesc('reviews.id')
-            ->get();
+            ->orderByDesc('reviews.id');
 
-        return view('admin.reviews', compact('reviews'));
+        if ($statusFilter === 'pending' && Schema::hasColumn('reviews', 'is_approved')) {
+            $query->where('reviews.is_approved', 0);
+        } elseif ($statusFilter === 'approved' && Schema::hasColumn('reviews', 'is_approved')) {
+            $query->where('reviews.is_approved', 1);
+        }
+
+        $reviews = $query->get();
+        $pendingCount = Schema::hasColumn('reviews', 'is_approved')
+            ? (int) DB::table('reviews')->where('is_approved', 0)->count()
+            : 0;
+
+        return view('admin.reviews', compact('reviews', 'statusFilter', 'pendingCount'));
+    }
+
+    public function approveReview($id)
+    {
+        if (Schema::hasColumn('reviews', 'is_approved')) {
+            DB::table('reviews')->where('id', $id)->update(['is_approved' => 1]);
+        }
+
+        return redirect('/admin/reviews')->with('status', 'Відгук опубліковано');
     }
 
     public function destroyReview($id)

@@ -9,7 +9,7 @@ use App\Http\Controllers\ProductController;
 use App\Http\Controllers\CartController;
 use App\Http\Controllers\FavoritesController;
 use App\Http\Controllers\NewController;
-use App\Http\Controllers\AboutController;
+use App\Http\Controllers\PageController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\CheckoutController;
 use App\Http\Controllers\ReviewController;
@@ -19,18 +19,22 @@ use App\Http\Controllers\AdminController;
 use App\Http\Controllers\AdminOrderController;
 use App\Http\Controllers\AdminMessageController;
 use App\Http\Controllers\AdminProductImportController;
+use App\Http\Controllers\AdminSiteController;
+use App\Http\Controllers\AdminPromocodeController;
+use App\Http\Controllers\AdminNewsletterController;
+use App\Http\Controllers\NewsletterController;
 use App\Http\Controllers\MessageController;
 
 Route::get('/', [HomeController::class, 'index']);
 Route::get('/catalog', [CatalogController::class, 'index']);
 Route::get('/product/{id}', [ProductController::class, 'show']);
 Route::get('/new', [NewController::class, 'index']);
-Route::get('/about', [AboutController::class, 'index']);
+Route::get('/about', [PageController::class, 'show'])->defaults('slug', 'about');
+Route::get('/privacy', [PageController::class, 'show'])->defaults('slug', 'privacy');
+Route::get('/cooperation', [PageController::class, 'show'])->defaults('slug', 'cooperation');
 
 Route::post('/support', [SupportController::class, 'store']);
-
-Route::view('/privacy', 'privacy');
-Route::view('/cooperation', 'cooperation');
+Route::post('/newsletter/subscribe', [NewsletterController::class, 'subscribe']);
 
 Route::get('/cart', [CartController::class, 'index']);
 Route::post('/cart/add', [CartController::class, 'add']);
@@ -92,13 +96,31 @@ Route::middleware('admin')->prefix('admin')->group(function () {
 
     Route::get('/categories', [AdminController::class, 'categories']);
     Route::post('/categories', [AdminController::class, 'storeCategory']);
+    Route::get('/categories/{id}/edit', [AdminController::class, 'editCategory']);
+    Route::put('/categories/{id}', [AdminController::class, 'updateCategory']);
     Route::delete('/categories/{id}', [AdminController::class, 'destroyCategory']);
+
+    Route::get('/settings', [AdminSiteController::class, 'settings']);
+    Route::post('/settings', [AdminSiteController::class, 'updateSettings']);
+    Route::get('/pages', [AdminSiteController::class, 'pages']);
+    Route::get('/pages/{slug}/edit', [AdminSiteController::class, 'editPage']);
+    Route::put('/pages/{slug}', [AdminSiteController::class, 'updatePage']);
+
+    Route::get('/promocodes', [AdminPromocodeController::class, 'index']);
+    Route::post('/promocodes', [AdminPromocodeController::class, 'store']);
+    Route::put('/promocodes/{id}', [AdminPromocodeController::class, 'update']);
+    Route::delete('/promocodes/{id}', [AdminPromocodeController::class, 'destroy']);
+
+    Route::get('/newsletter', [AdminNewsletterController::class, 'index']);
+    Route::post('/newsletter/{id}/unsubscribe', [AdminNewsletterController::class, 'unsubscribe']);
+    Route::delete('/newsletter/{id}', [AdminNewsletterController::class, 'destroy']);
 
     Route::get('/support', [AdminController::class, 'support']);
     Route::post('/support/{id}/resolve', [AdminController::class, 'resolveSupport']);
     Route::delete('/support/{id}', [AdminController::class, 'destroySupport']);
 
     Route::get('/reviews', [AdminController::class, 'reviews']);
+    Route::post('/reviews/{id}/approve', [AdminController::class, 'approveReview']);
     Route::delete('/reviews/{id}', [AdminController::class, 'destroyReview']);
 
     Route::get('/messages', [AdminMessageController::class, 'index']);
@@ -110,6 +132,8 @@ Route::middleware('admin')->prefix('admin')->group(function () {
     Route::get('/users', [AdminController::class, 'users']);
     Route::get('/users/create', [AdminController::class, 'createUser']);
     Route::post('/users', [AdminController::class, 'storeUser']);
+    Route::get('/users/{id}/edit', [AdminController::class, 'editUser']);
+    Route::put('/users/{id}', [AdminController::class, 'updateUser']);
     Route::get('/users/{id}', [AdminController::class, 'showUser']);
     Route::delete('/users/{id}', [AdminController::class, 'destroyUser']);
 

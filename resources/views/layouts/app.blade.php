@@ -10,7 +10,7 @@
 
 <header class="site-header">
     <div class="container header-container">
-        <a href="{{ url('/') }}" class="logo">CLOTH<span>STORE</span></a>
+        <a href="{{ url('/') }}" class="logo">{{ $site['brand_lead'] ?? 'CLOTH' }}<span>{{ $site['brand_accent'] ?? 'STORE' }}</span></a>
 
         <nav class="main-nav">
             <a href="{{ url('/') }}" class="nav-link">Головна</a>
@@ -130,19 +130,36 @@
 <footer class="site-footer site-footer-v2">
     <div class="footer-top-strip">
         <div class="container footer-top-strip-inner">
-            <span>Нова колекція вже в каталозі</span>
-            <a href="{{ url('/new') }}" class="footer-top-link">Дивитись новинки →</a>
+            <span>{{ $site['footer_strip_text'] ?? 'Нова колекція вже в каталозі' }}</span>
+            <a href="{{ url($site['footer_strip_link_url'] ?? '/new') }}" class="footer-top-link">{{ $site['footer_strip_link_text'] ?? 'Дивитись новинки →' }}</a>
         </div>
     </div>
 
     <div class="container footer-v2-grid">
         <div class="footer-v2-brand">
-            <a href="{{ url('/') }}" class="footer-logo">CLOTH<span>STORE</span></a>
-            <p>Сучасний одяг у мінімалістичному стилі. Зручний онлайн-магазин з доставкою по всій Україні.</p>
-            <a href="https://www.instagram.com/tori_cloth.store?utm_source=qr" target="_blank" rel="noopener" class="footer-social-v2" aria-label="Instagram">
+            <a href="{{ url('/') }}" class="footer-logo">{{ $site['brand_lead'] ?? 'CLOTH' }}<span>{{ $site['brand_accent'] ?? 'STORE' }}</span></a>
+            <p>{{ $site['footer_description'] ?? '' }}</p>
+            @if (! empty($site['instagram_url']))
+            <a href="{{ $site['instagram_url'] }}" target="_blank" rel="noopener" class="footer-social-v2" aria-label="Instagram">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="2" width="20" height="20" rx="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>
-                @tori_cloth.store
+                {{ $site['instagram_handle'] ?? 'Instagram' }}
             </a>
+            @endif
+
+            <form action="{{ url('/newsletter/subscribe') }}" method="POST" class="footer-newsletter">
+                @csrf
+                <label for="footer_newsletter_email" class="footer-newsletter-label">Розсилка новинок</label>
+                <div class="footer-newsletter-row">
+                    <input type="email" id="footer_newsletter_email" name="email" placeholder="you@email.com" required>
+                    <button type="submit" class="btn btn-dark btn-sm">Підписатись</button>
+                </div>
+                @if (session('newsletterSuccess'))
+                    <small class="footer-newsletter-ok">{{ session('newsletterSuccess') }}</small>
+                @endif
+                @if (session('newsletterError'))
+                    <small class="footer-newsletter-err">{{ session('newsletterError') }}</small>
+                @endif
+            </form>
         </div>
 
         <div class="footer-v2-col">
@@ -174,28 +191,28 @@
             <ul class="footer-v2-contacts">
                 <li>
                     <span class="footer-contact-label">Email</span>
-                    <a href="mailto:info@clothstore.local">info@clothstore.local</a>
+                    <a href="mailto:{{ $site['contact_email'] ?? 'info@clothstore.local' }}">{{ $site['contact_email'] ?? 'info@clothstore.local' }}</a>
                 </li>
                 <li>
                     <span class="footer-contact-label">Телефон</span>
-                    <a href="tel:+380990000000">+380 99 000 00 00</a>
+                    <a href="tel:{{ preg_replace('/\s+/', '', $site['contact_phone'] ?? '') }}">{{ $site['contact_phone'] ?? '' }}</a>
                 </li>
                 <li>
                     <span class="footer-contact-label">Локація</span>
-                    <span>Україна</span>
+                    <span>{{ $site['contact_location'] ?? 'Україна' }}</span>
                 </li>
             </ul>
             <div class="footer-v2-badges">
-                <span>Nova Poshta</span>
-                <span>Ukrposhta</span>
-                <span>Meest</span>
+                @foreach (array_filter(array_map('trim', explode(',', $site['delivery_carriers'] ?? ''))) as $carrier)
+                    <span>{{ $carrier }}</span>
+                @endforeach
             </div>
         </div>
     </div>
 
     <div class="footer-v2-bottom">
         <div class="container footer-v2-bottom-inner">
-            <p>© {{ date('Y') }} ClothStore. Усі права захищені.</p>
+            <p>© {{ date('Y') }} {{ $site['brand_name'] ?? 'ClothStore' }}. Усі права захищені.</p>
             <a href="{{ url('/catalog') }}" class="footer-v2-cta">Перейти до покупок</a>
         </div>
     </div>
@@ -218,7 +235,7 @@
 <div class="support-panel {{ session('supportSuccess') ? 'open' : '' }}" id="supportPanel">
     <div class="support-panel-head">
         <div>
-            <strong>Підтримка ClothStore</strong>
+            <strong>Підтримка {{ $site['brand_name'] ?? 'ClothStore' }}</strong>
             <p>Зазвичай відповідаємо протягом дня</p>
         </div>
         <button type="button" class="support-panel-close" id="supportClose" aria-label="Закрити">×</button>

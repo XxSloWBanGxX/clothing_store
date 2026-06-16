@@ -8,30 +8,27 @@
     <section class="hero-section">
         <div class="container hero-grid">
             <div class="hero-content">
-                <span class="hero-badge">NEW COLLECTION</span>
-                <h1>Стиль, який<br>говорить за тебе</h1>
-                <p>
-                    Сучасний одяг для тих, хто цінує мінімалізм, комфорт та
-                    впевнений вигляд кожного дня.
-                </p>
+                <span class="hero-badge">{{ $site['hero_badge'] ?? 'NEW COLLECTION' }}</span>
+                <h1>{!! nl2br(e($site['hero_title'] ?? 'Стиль, який говорить за тебе')) !!}</h1>
+                <p>{{ $site['hero_text'] ?? '' }}</p>
 
                 <div class="hero-buttons">
-                    <a href="{{ url('/catalog') }}" class="btn btn-dark">Перейти в каталог</a>
-                    <a href="{{ url('/catalog') }}" class="btn btn-light">Дивитися новинки</a>
+                    <a href="{{ url($site['hero_btn1_url'] ?? '/catalog') }}" class="btn btn-dark">{{ $site['hero_btn1_text'] ?? 'Перейти в каталог' }}</a>
+                    <a href="{{ url($site['hero_btn2_url'] ?? '/new') }}" class="btn btn-light">{{ $site['hero_btn2_text'] ?? 'Дивитися новинки' }}</a>
                 </div>
 
                 <div class="hero-stats">
                     <div class="stat-item">
-                        <h3>500+</h3>
-                        <p>Товарів</p>
+                        <h3>{{ $site['hero_stat1_value'] ?? '500+' }}</h3>
+                        <p>{{ $site['hero_stat1_label'] ?? 'Товарів' }}</p>
                     </div>
                     <div class="stat-item">
-                        <h3>24/7</h3>
-                        <p>Онлайн замовлення</p>
+                        <h3>{{ $site['hero_stat2_value'] ?? '24/7' }}</h3>
+                        <p>{{ $site['hero_stat2_label'] ?? 'Онлайн замовлення' }}</p>
                     </div>
                     <div class="stat-item">
-                        <h3>100%</h3>
-                        <p>Сучасний стиль</p>
+                        <h3>{{ $site['hero_stat3_value'] ?? '100%' }}</h3>
+                        <p>{{ $site['hero_stat3_label'] ?? 'Сучасний стиль' }}</p>
                     </div>
                 </div>
             </div>
@@ -49,16 +46,16 @@
     <section class="features-section">
         <div class="container features-grid">
             <div class="feature-box">
-                <h3>Швидке оформлення</h3>
-                <p>Простий і зручний процес покупки без зайвих кроків.</p>
+                <h3>{{ $site['feature1_title'] ?? '' }}</h3>
+                <p>{{ $site['feature1_text'] ?? '' }}</p>
             </div>
             <div class="feature-box">
-                <h3>Актуальні колекції</h3>
-                <p>Стильні моделі одягу в сучасному мінімалістичному стилі.</p>
+                <h3>{{ $site['feature2_title'] ?? '' }}</h3>
+                <p>{{ $site['feature2_text'] ?? '' }}</p>
             </div>
             <div class="feature-box">
-                <h3>Зручний інтерфейс</h3>
-                <p>Приємна навігація, сучасний дизайн і база для розвитку магазину.</p>
+                <h3>{{ $site['feature3_title'] ?? '' }}</h3>
+                <p>{{ $site['feature3_text'] ?? '' }}</p>
             </div>
         </div>
     </section>
@@ -168,14 +165,11 @@
         <div class="container">
             <div class="banner-box">
                 <div>
-                    <span class="section-label">COLLECTION</span>
-                    <h2>Онови свій гардероб вже сьогодні</h2>
-                    <p>
-                        Підбери речі, які підкреслять твій стиль та зроблять
-                        магазин виглядом реально сучасним уже з головної сторінки.
-                    </p>
+                    <span class="section-label">{{ $site['banner_label'] ?? 'COLLECTION' }}</span>
+                    <h2>{{ $site['banner_title'] ?? '' }}</h2>
+                    <p>{{ $site['banner_text'] ?? '' }}</p>
                 </div>
-                <a href="{{ url('/catalog') }}" class="btn btn-dark">До покупок</a>
+                <a href="{{ url($site['banner_btn_url'] ?? '/catalog') }}" class="btn btn-dark">{{ $site['banner_btn_text'] ?? 'До покупок' }}</a>
             </div>
         </div>
     </section>

@@ -62,6 +62,7 @@
                         <td>
                             <div class="adm-row-actions">
                                 <a href="{{ url('/catalog?category=' . $category->slug) }}" class="btn btn-light btn-sm" target="_blank">На сайті</a>
+                                <a href="{{ url('/admin/categories/' . $category->id . '/edit') }}" class="btn btn-dark btn-sm">Редагувати</a>
                                 <form action="{{ url('/admin/categories/' . $category->id) }}" method="POST" onsubmit="return confirm('Видалити категорію?');">
                                     @csrf
                                     @method('DELETE')

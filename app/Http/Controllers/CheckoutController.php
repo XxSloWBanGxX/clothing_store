@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Services\CardPaymentService;
 use App\Services\Delivery\UserDeliveryStorage;
+use App\Services\PromoService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -34,10 +35,34 @@ class CheckoutController extends Controller
         $userRow = DB::table('users')->where('id', $user->id)->first();
         $deliverySaved = UserDeliveryStorage::pickerSaved($userRow, old('delivery_carrier'));
 
-        return view('checkout', compact('cartItems', 'total', 'user', 'userRow', 'deliverySaved'));
+        $discount = 0.0;
+        $promoApplied = null;
+        $promoCode = old('promo_code', '');
+
+        if ($promoCode !== '') {
+            $promoService = app(PromoService::class);
+            $promoApplied = $promoService->validate($promoCode, (int) $user->id, $total);
+            if ($promoApplied['valid'] ?? false) {
+                $discount = (float) $promoApplied['discount_amount'];
+            }
+        }
+
+        $finalTotal = max(0, $total - $discount);
+
+        return view('checkout', compact(
+            'cartItems',
+            'total',
+            'finalTotal',
+            'discount',
+            'promoApplied',
+            'promoCode',
+            'user',
+            'userRow',
+            'deliverySaved'
+        ));
     }
 
-    public function store(Request $request, CardPaymentService $cardPayment)
+    public function store(Request $request, CardPaymentService $cardPayment, PromoService $promoService)
     {
         $cart = session('cart', []);
 
@@ -57,6 +82,7 @@ class CheckoutController extends Controller
             'comment' => ['nullable', 'string'],
             'delivery_city_ref' => ['nullable', 'string', 'max:64'],
             'delivery_branch_ref' => ['nullable', 'string', 'max:64'],
+            'promo_code' => ['nullable', 'string', 'max:32'],
         ];
 
         if ($request->input('payment_method') === 'card') {
@@ -101,6 +127,23 @@ class CheckoutController extends Controller
             $total += (float) $item['price'] * (int) $item['quantity'];
         }
 
+        $discount = 0.0;
+        $promoCode = null;
+        $promoData = null;
+
+        if ($request->filled('promo_code')) {
+            $promoData = $promoService->validate($request->input('promo_code'), (int) Auth::id(), $total);
+
+            if (! ($promoData['valid'] ?? false)) {
+                return back()->withInput()->withErrors(['promo_code' => $promoData['message'] ?? 'Некоректний промокод']);
+            }
+
+            $discount = (float) $promoData['discount_amount'];
+            $promoCode = $promoData['code'];
+        }
+
+        $payableTotal = max(0, $total - $discount);
+
         $paymentStatus = 'pending';
         $orderStatus = 'new';
         $cardLast4 = null;
@@ -109,7 +152,7 @@ class CheckoutController extends Controller
         if ($validated['payment_method'] === 'card') {
             try {
                 $card = $cardPayment->validate($validated);
-                $payment = $cardPayment->charge($total, $card);
+                $payment = $cardPayment->charge($payableTotal, $card);
                 $paymentStatus = 'paid';
                 $orderStatus = 'processing';
                 $cardLast4 = $payment['last4'];
@@ -119,7 +162,7 @@ class CheckoutController extends Controller
             }
         }
 
-        $orderId = DB::transaction(function () use ($cart, $validated, $total, $paymentStatus, $orderStatus, $cardLast4, $paymentReference) {
+        $orderId = DB::transaction(function () use ($cart, $validated, $total, $payableTotal, $discount, $promoCode, $paymentStatus, $orderStatus, $cardLast4, $paymentReference) {
             $orderData = [
                 'user_id' => Auth::id(),
                 'full_name' => $validated['full_name'],
@@ -130,10 +173,17 @@ class CheckoutController extends Controller
                 'delivery_method' => $validated['delivery_method'] ?? $validated['delivery_carrier'],
                 'payment_method' => $validated['payment_method'],
                 'comment' => $validated['comment'] ?? '',
-                'total_amount' => $total,
+                'total_amount' => $payableTotal,
                 'status' => $orderStatus,
                 'created_at' => now(),
             ];
+
+            if (Schema::hasColumn('orders', 'discount_amount')) {
+                $orderData['discount_amount'] = $discount;
+            }
+            if (Schema::hasColumn('orders', 'promocode')) {
+                $orderData['promocode'] = $promoCode;
+            }
 
             if (Schema::hasColumn('orders', 'payment_status')) {
                 $orderData['payment_status'] = $paymentStatus;
@@ -164,6 +214,10 @@ class CheckoutController extends Controller
 
             return $orderId;
         });
+
+        if ($promoData && ($promoData['valid'] ?? false)) {
+            $promoService->markUsed($promoData);
+        }
 
         if (Schema::hasColumn('users', 'delivery_city')) {
             UserDeliveryStorage::save(Auth::id(), $validated['delivery_carrier'], [
