@@ -142,7 +142,7 @@
 
 @yield('content')
 
-<footer class="site-footer site-footer-v2">
+<footer class="site-footer site-footer-v2" id="footer">
     <div class="footer-top-strip">
         <div class="container footer-top-strip-inner">
             <span>{{ $site['footer_strip_text'] ?? 'Нова колекція вже в каталозі' }}</span>
@@ -202,7 +202,7 @@
             </nav>
         </div>
 
-        <div class="footer-v2-col">
+        <div class="footer-v2-col" id="contacts">
             <h4>Контакти</h4>
             <ul class="footer-v2-contacts">
                 <li>

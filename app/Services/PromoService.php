@@ -110,4 +110,37 @@ class PromoService
     {
         return round($subtotal * ($percent / 100), 2);
     }
+
+    public function promocodeStatus(object $promo): string
+    {
+        if (! $promo->is_active) {
+            return 'disabled';
+        }
+
+        $now = now();
+
+        if (! empty($promo->starts_at) && $now->lt($promo->starts_at)) {
+            return 'scheduled';
+        }
+
+        if (! empty($promo->expires_at) && $now->gt($promo->expires_at)) {
+            return 'expired';
+        }
+
+        if ($promo->max_uses !== null && (int) $promo->uses_count >= (int) $promo->max_uses) {
+            return 'expired';
+        }
+
+        return 'active';
+    }
+
+    public function promocodeStatusLabel(string $status): string
+    {
+        return match ($status) {
+            'active' => 'Активний',
+            'scheduled' => 'Запланований',
+            'expired' => 'Завершений',
+            default => 'Вимкнено',
+        };
+    }
 }

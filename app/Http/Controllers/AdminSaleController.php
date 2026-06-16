@@ -14,14 +14,25 @@ class AdminSaleController extends Controller
     {
     }
 
-    public function index()
+    public function index(Request $request)
     {
         $sales = Schema::hasTable('sales')
             ? DB::table('sales')->orderByDesc('id')->get()
             : collect();
 
         $categories = DB::table('categories')->orderBy('name')->get();
-        $products = DB::table('products')->orderBy('name')->get(['id', 'name', 'price']);
+        $products = DB::table('products')
+            ->join('categories', 'categories.id', '=', 'products.category_id')
+            ->select(
+                'products.id',
+                'products.name',
+                'products.price',
+                'products.category_id',
+                'categories.name as category_name'
+            )
+            ->orderBy('products.name')
+            ->get();
+        $categoryNames = $categories->pluck('name', 'id');
 
         $saleProducts = [];
         if (Schema::hasTable('sale_products') && $sales->isNotEmpty()) {
@@ -34,7 +45,50 @@ class AdminSaleController extends Controller
             }
         }
 
-        return view('admin.sales', compact('sales', 'categories', 'products', 'saleProducts'));
+        $activeTab = $request->query('tab', 'create');
+        if (! in_array($activeTab, ['create', 'list'], true)) {
+            $activeTab = 'create';
+        }
+
+        $filter = $request->query('filter', 'all');
+        $stats = [
+            'total' => $sales->count(),
+            'active' => 0,
+            'scheduled' => 0,
+            'expired' => 0,
+        ];
+
+        $filtered = $sales->filter(function ($sale) use (&$stats, $filter) {
+            $status = $this->pricing->saleStatus($sale);
+            if ($status === 'active') {
+                $stats['active']++;
+            } elseif ($status === 'scheduled') {
+                $stats['scheduled']++;
+            } elseif ($status === 'expired') {
+                $stats['expired']++;
+            }
+
+            if ($filter === 'all') {
+                return true;
+            }
+
+            return $status === $filter || ($filter === 'disabled' && $status === 'disabled');
+        });
+
+        $serverNow = $this->pricing->now();
+
+        return view('admin.sales', compact(
+            'sales',
+            'filtered',
+            'stats',
+            'categories',
+            'categoryNames',
+            'products',
+            'saleProducts',
+            'activeTab',
+            'filter',
+            'serverNow'
+        ));
     }
 
     public function store(Request $request)
@@ -61,7 +115,7 @@ class AdminSaleController extends Controller
 
         $this->syncProducts($saleId, $validated['scope'], $request->input('product_ids', []));
 
-        return redirect('/admin/sales')->with('status', 'Акцію створено');
+        return redirect('/admin/sales?tab=list')->with('status', 'Акцію створено');
     }
 
     public function update(Request $request, $id)
@@ -90,7 +144,7 @@ class AdminSaleController extends Controller
 
         $this->syncProducts((int) $id, $validated['scope'], $request->input('product_ids', []));
 
-        return redirect('/admin/sales')->with('status', 'Акцію оновлено');
+        return redirect('/admin/sales?tab=list&edit=' . $id)->with('status', 'Акцію оновлено');
     }
 
     public function destroy($id)
@@ -101,7 +155,7 @@ class AdminSaleController extends Controller
 
         DB::table('sales')->where('id', $id)->delete();
 
-        return redirect('/admin/sales')->with('status', 'Акцію видалено');
+        return redirect('/admin/sales?tab=list')->with('status', 'Акцію видалено');
     }
 
     private function validateSale(Request $request, ?int $ignoreId = null): array

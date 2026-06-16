@@ -2,20 +2,60 @@
 
 namespace App\Http\Controllers;
 
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 class AdminNewsletterController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $subscribers = Schema::hasTable('newsletter_subscribers')
-            ? DB::table('newsletter_subscribers')->orderByDesc('id')->get()
-            : collect();
+        $query = Schema::hasTable('newsletter_subscribers')
+            ? DB::table('newsletter_subscribers')->orderByDesc('id')
+            : null;
 
-        $activeCount = $subscribers->filter(fn ($row) => $this->isActive($row))->count();
+        $subscribers = $query ? $query->get() : collect();
 
-        return view('admin.newsletter', compact('subscribers', 'activeCount'));
+        $search = trim((string) $request->query('search', ''));
+        $filter = $request->query('filter', 'all');
+
+        $stats = [
+            'total' => $subscribers->count(),
+            'active' => 0,
+            'unsubscribed' => 0,
+            'recent' => 0,
+        ];
+
+        $recentSince = now()->subDays(30);
+
+        $filtered = $subscribers->filter(function ($row) use (&$stats, $search, $filter, $recentSince) {
+            $isActive = $this->isActive($row);
+            if ($isActive) {
+                $stats['active']++;
+            } else {
+                $stats['unsubscribed']++;
+            }
+
+            $subscribedAt = $row->subscribed_at ?? $row->created_at ?? null;
+            if ($subscribedAt && \Illuminate\Support\Carbon::parse($subscribedAt)->gte($recentSince)) {
+                $stats['recent']++;
+            }
+
+            if ($search !== '' && stripos($row->email ?? '', $search) === false) {
+                return false;
+            }
+
+            if ($filter === 'active') {
+                return $isActive;
+            }
+            if ($filter === 'unsubscribed') {
+                return ! $isActive;
+            }
+
+            return true;
+        });
+
+        return view('admin.newsletter', compact('subscribers', 'filtered', 'stats', 'search', 'filter'));
     }
 
     public function destroy($id)

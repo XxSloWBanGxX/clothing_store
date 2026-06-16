@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Services\PromoService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
@@ -9,13 +10,47 @@ use Illuminate\Validation\Rule;
 
 class AdminPromocodeController extends Controller
 {
-    public function index()
+    public function __construct(private PromoService $promoService)
+    {
+    }
+
+    public function index(Request $request)
     {
         $promocodes = Schema::hasTable('promocodes')
             ? DB::table('promocodes')->orderByDesc('id')->get()
             : collect();
 
-        return view('admin.promocodes', compact('promocodes'));
+        $activeTab = $request->query('tab', 'create');
+        if (! in_array($activeTab, ['create', 'list'], true)) {
+            $activeTab = 'create';
+        }
+
+        $filter = $request->query('filter', 'all');
+        $stats = [
+            'total' => $promocodes->count(),
+            'active' => 0,
+            'scheduled' => 0,
+            'expired' => 0,
+        ];
+
+        $filtered = $promocodes->filter(function ($promo) use (&$stats, $filter) {
+            $status = $this->promoService->promocodeStatus($promo);
+            if ($status === 'active') {
+                $stats['active']++;
+            } elseif ($status === 'scheduled') {
+                $stats['scheduled']++;
+            } elseif ($status === 'expired') {
+                $stats['expired']++;
+            }
+
+            if ($filter === 'all') {
+                return true;
+            }
+
+            return $status === $filter || ($filter === 'disabled' && $status === 'disabled');
+        });
+
+        return view('admin.promocodes', compact('promocodes', 'filtered', 'stats', 'activeTab', 'filter'));
     }
 
     public function store(Request $request)
@@ -33,6 +68,7 @@ class AdminPromocodeController extends Controller
             'code.unique' => 'Такий промокод вже існує',
             'title.required' => 'Введи назву акції',
             'discount_percent.required' => 'Вкажи відсоток знижки',
+            'expires_at.after_or_equal' => 'Дата завершення має бути після дати початку',
         ]);
 
         DB::table('promocodes')->insert([
@@ -48,7 +84,7 @@ class AdminPromocodeController extends Controller
             'created_at' => now(),
         ]);
 
-        return redirect('/admin/promocodes')->with('status', 'Промокод створено');
+        return redirect('/admin/promocodes?tab=list')->with('status', 'Промокод створено');
     }
 
     public function update(Request $request, $id)
@@ -65,7 +101,10 @@ class AdminPromocodeController extends Controller
             'discount_percent' => ['required', 'integer', 'min:1', 'max:90'],
             'min_order_amount' => ['nullable', 'numeric', 'min:0'],
             'max_uses' => ['nullable', 'integer', 'min:1'],
-            'expires_at' => ['nullable', 'date'],
+            'starts_at' => ['nullable', 'date'],
+            'expires_at' => ['nullable', 'date', 'after_or_equal:starts_at'],
+        ], [
+            'expires_at.after_or_equal' => 'Дата завершення має бути після дати початку',
         ]);
 
         DB::table('promocodes')->where('id', $id)->update([
@@ -79,13 +118,13 @@ class AdminPromocodeController extends Controller
             'is_active' => $request->boolean('is_active') ? 1 : 0,
         ]);
 
-        return redirect('/admin/promocodes')->with('status', 'Промокод оновлено');
+        return redirect('/admin/promocodes?tab=list&edit=' . $id)->with('status', 'Промокод оновлено');
     }
 
     public function destroy($id)
     {
         DB::table('promocodes')->where('id', $id)->delete();
 
-        return redirect('/admin/promocodes')->with('status', 'Промокод видалено');
+        return redirect('/admin/promocodes?tab=list')->with('status', 'Промокод видалено');
     }
 }
