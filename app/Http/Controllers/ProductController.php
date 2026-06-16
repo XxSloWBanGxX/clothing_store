@@ -3,11 +3,16 @@
 namespace App\Http\Controllers;
 
 use App\Models\Product;
+use App\Services\PricingService;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB; // Додали для швидких запитів до бази
+use Illuminate\Support\Facades\DB;
 
 class ProductController extends Controller
 {
+    public function __construct(private PricingService $pricing)
+    {
+    }
+
     public function show($id)
     {
         // 1. Дістаємо сам товар
@@ -16,8 +21,9 @@ class ProductController extends Controller
             ->findOrFail($id)
             ->toArray();
 
-        // 2. Дістаємо додаткові дані (кольори, розміри, картинки)
-        // json_decode(json_encode(...)) — це хитрий трюк, щоб перетворити дані в масиви, як очікує твій старий код
+        $product = $this->pricing->applyToProduct($product);
+
+        // 2. Дістаємо додаткові дані
         $images = json_decode(json_encode(DB::table('product_images')->where('product_id', $id)->orderBy('sort_order')->get()), true);
         $sizes = json_decode(json_encode(DB::table('product_sizes')->where('product_id', $id)->orderBy('sort_order')->get()), true);
         $colors = json_decode(json_encode(DB::table('product_colors')->where('product_id', $id)->orderBy('sort_order')->get()), true);
@@ -52,6 +58,8 @@ class ProductController extends Controller
                 ->take(4)
                 ->get()
         ), true);
+
+        $related = $this->pricing->applyToMany($related);
 
         // 3. Пакуємо все в один масив $data
         $data = [

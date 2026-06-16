@@ -26,7 +26,8 @@ class AdminPromocodeController extends Controller
             'discount_percent' => ['required', 'integer', 'min:1', 'max:90'],
             'min_order_amount' => ['nullable', 'numeric', 'min:0'],
             'max_uses' => ['nullable', 'integer', 'min:1'],
-            'expires_at' => ['nullable', 'date'],
+            'starts_at' => ['nullable', 'date'],
+            'expires_at' => ['nullable', 'date', 'after_or_equal:starts_at'],
         ], [
             'code.required' => 'Введи код промокоду',
             'code.unique' => 'Такий промокод вже існує',
@@ -41,7 +42,8 @@ class AdminPromocodeController extends Controller
             'min_order_amount' => $validated['min_order_amount'] ?: null,
             'max_uses' => $validated['max_uses'] ?: null,
             'uses_count' => 0,
-            'expires_at' => $validated['expires_at'] ?: null,
+            'starts_at' => $validated['starts_at'] ?? null,
+            'expires_at' => $validated['expires_at'] ?? null,
             'is_active' => $request->boolean('is_active', true) ? 1 : 0,
             'created_at' => now(),
         ]);
@@ -72,7 +74,8 @@ class AdminPromocodeController extends Controller
             'discount_percent' => (int) $validated['discount_percent'],
             'min_order_amount' => $validated['min_order_amount'] ?: null,
             'max_uses' => $validated['max_uses'] ?: null,
-            'expires_at' => $validated['expires_at'] ?: null,
+            'starts_at' => $validated['starts_at'] ?? null,
+            'expires_at' => $validated['expires_at'] ?? null,
             'is_active' => $request->boolean('is_active') ? 1 : 0,
         ]);
 

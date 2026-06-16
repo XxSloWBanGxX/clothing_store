@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 use App\Services\SiteSettings;
+use App\Services\PricingService;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\View;
@@ -49,6 +50,7 @@ class AppServiceProvider extends ServiceProvider
                 'cartCount' => $cartCount,
                 'favCount' => $favCount,
                 'site' => SiteSettings::all(),
+                'activeSaleBanner' => app(PricingService::class)->getBannerSale(),
             ]);
         });
 

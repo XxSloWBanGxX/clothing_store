@@ -85,6 +85,10 @@ class PromoService
 
     private function globalError(object $promo, float $subtotal): ?string
     {
+        if ($promo->starts_at && now()->lt($promo->starts_at)) {
+            return 'Промокод ще не активний';
+        }
+
         if ($promo->expires_at && now()->greaterThan($promo->expires_at)) {
             return 'Промокод прострочений';
         }

@@ -23,8 +23,8 @@
 
     $mainImage = ! empty($gallery) ? $gallery[0] : '';
     $inStock = (int) ($product['stock'] ?? 0) > 0;
-    $onSale = ! empty($product['old_price']) && (float) $product['old_price'] > (float) $product['price'];
-    $discountPercent = $onSale ? (int) round((1 - (float) $product['price'] / (float) $product['old_price']) * 100) : 0;
+    $onSale = ! empty($product['on_sale']);
+    $discountPercent = (int) ($product['discount_percent'] ?? 0);
 
     $characteristics = [
         'Категорія' => $product['category_name'] ?? 'Одяг',
@@ -377,7 +377,7 @@
                 <div class="catalog-grid-v2">
                     @foreach ($data['related'] as $rel)
                         @php
-                            $relSale = ! empty($rel['old_price']) && (float) $rel['old_price'] > (float) $rel['price'];
+                            $relSale = ! empty($rel['on_sale']);
                             $relStock = (int) ($rel['stock'] ?? 0) > 0;
                         @endphp
                         <article class="catalog-item">

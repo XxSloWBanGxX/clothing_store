@@ -3,11 +3,16 @@
 namespace App\Http\Controllers;
 
 use App\Models\Product;
+use App\Services\PricingService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
 class HomeController extends Controller
 {
+    public function __construct(private PricingService $pricing)
+    {
+    }
+
     public function index()
     {
         $featuredProducts = Product::join('categories', 'categories.id', '=', 'products.category_id')
@@ -49,6 +54,9 @@ class HomeController extends Controller
             ->take(8)
             ->get();
         $newProducts = json_decode(json_encode($newProducts), true);
+        $newProducts = $this->pricing->applyToMany($newProducts);
+
+        $featuredProducts = $this->pricing->applyToMany($featuredProducts);
 
         $data = [
             'featuredProducts' => $featuredProducts,

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Services\CardPaymentService;
 use App\Services\Delivery\UserDeliveryStorage;
+use App\Services\PricingService;
 use App\Services\PromoService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -14,6 +15,10 @@ use Illuminate\Validation\ValidationException;
 
 class CheckoutController extends Controller
 {
+    public function __construct(private PricingService $pricing)
+    {
+    }
+
     public function index()
     {
         $cart = session('cart', []);
@@ -25,11 +30,19 @@ class CheckoutController extends Controller
         $cartItems = [];
         $total = 0;
 
-        foreach ($cart as $item) {
+        foreach ($cart as $productId => $item) {
+            $product = DB::table('products')->where('id', $productId)->first();
+            if ($product) {
+                $item['price'] = $this->pricing->getEffectivePrice($product);
+                $cart[$productId]['price'] = $item['price'];
+            }
+
             $subtotal = (float) $item['price'] * (int) $item['quantity'];
             $total += $subtotal;
             $cartItems[] = array_merge($item, ['subtotal' => $subtotal]);
         }
+
+        session(['cart' => $cart]);
 
         $user = Auth::user();
         $userRow = DB::table('users')->where('id', $user->id)->first();
@@ -123,9 +136,16 @@ class CheckoutController extends Controller
         }
 
         $total = 0;
-        foreach ($cart as $item) {
+        foreach ($cart as $productId => $item) {
+            $product = DB::table('products')->where('id', $productId)->first();
+            if ($product) {
+                $item['price'] = $this->pricing->getEffectivePrice($product);
+                $cart[$productId]['price'] = $item['price'];
+            }
             $total += (float) $item['price'] * (int) $item['quantity'];
         }
+
+        session(['cart' => $cart]);
 
         $discount = 0.0;
         $promoCode = null;

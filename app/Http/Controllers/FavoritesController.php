@@ -2,11 +2,16 @@
 
 namespace App\Http\Controllers;
 
+use App\Services\PricingService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
 class FavoritesController extends Controller
 {
+    public function __construct(private PricingService $pricing)
+    {
+    }
+
     private function folders(): array
     {
         return session('favorite_folders', ['Обране' => []]);
@@ -36,7 +41,7 @@ class FavoritesController extends Controller
 
                 foreach ($productIds as $productId) {
                     if (isset($rows[$productId])) {
-                        $items[] = (array) $rows[$productId];
+                        $items[] = $this->pricing->applyToProduct((array) $rows[$productId]);
                     }
                 }
             }

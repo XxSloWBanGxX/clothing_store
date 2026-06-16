@@ -8,6 +8,19 @@
 </head>
 <body>
 
+@if (! empty($activeSaleBanner))
+    <div class="site-sale-banner" id="siteSaleBanner" @if($activeSaleBanner->ends_at) data-ends-at="{{ \Illuminate\Support\Carbon::parse($activeSaleBanner->ends_at)->toIso8601String() }}" @endif>
+        <div class="container site-sale-banner-inner">
+            <a href="{{ url('/sale') }}" class="site-sale-banner-text">
+                {{ $activeSaleBanner->banner_text ?: $activeSaleBanner->title . ' — знижка ' . (int) $activeSaleBanner->discount_percent . '%' }}
+            </a>
+            @if ($activeSaleBanner->ends_at)
+                <span class="site-sale-banner-timer" id="siteSaleBannerTimer"></span>
+            @endif
+        </div>
+    </div>
+@endif
+
 <header class="site-header">
     <div class="container header-container">
         <a href="{{ url('/') }}" class="logo">{{ $site['brand_lead'] ?? 'CLOTH' }}<span>{{ $site['brand_accent'] ?? 'STORE' }}</span></a>
@@ -28,6 +41,7 @@
             </div>
 
             <a href="{{ url('/new') }}" class="nav-link">Новинки</a>
+            <a href="{{ url('/sale') }}" class="nav-link {{ request()->is('sale') ? 'is-active' : '' }}">Знижки</a>
             <a href="{{ url('/about') }}" class="nav-link">Про нас</a>
         </nav>
 
@@ -106,6 +120,7 @@
             @endforeach
         @endif
         <a href="{{ url('/new') }}" class="mobile-link">Новинки</a>
+        <a href="{{ url('/sale') }}" class="mobile-link">Знижки</a>
         <a href="{{ url('/about') }}" class="mobile-link">Про нас</a>
         <a href="{{ url('/favorites') }}" class="mobile-link">Обране</a>
         <a href="{{ url('/cart') }}" class="mobile-link">Кошик</a>
@@ -168,6 +183,7 @@
                 <a href="{{ url('/') }}">Головна</a>
                 <a href="{{ url('/catalog') }}">Каталог</a>
                 <a href="{{ url('/new') }}">Новинки</a>
+                <a href="{{ url('/sale') }}">Знижки</a>
                 <a href="{{ url('/favorites') }}">Обране</a>
                 <a href="{{ url('/cart') }}">Кошик</a>
             </nav>
@@ -326,6 +342,27 @@
                 dropdown.classList.remove('open');
             }
         });
+    })();
+
+    (function () {
+        const banner = document.getElementById('siteSaleBanner');
+        const timer = document.getElementById('siteSaleBannerTimer');
+        if (!banner || !timer || !banner.dataset.endsAt) return;
+
+        function tick() {
+            const ms = new Date(banner.dataset.endsAt).getTime() - Date.now();
+            if (ms <= 0) {
+                timer.textContent = 'Акція завершена';
+                return;
+            }
+            const h = Math.floor(ms / 3600000);
+            const m = Math.floor((ms % 3600000) / 60000);
+            const s = Math.floor((ms % 60000) / 1000);
+            timer.textContent = 'Залишилось: ' + String(h).padStart(2, '0') + ':' + String(m).padStart(2, '0') + ':' + String(s).padStart(2, '0');
+        }
+
+        tick();
+        setInterval(tick, 1000);
     })();
 </script>
 

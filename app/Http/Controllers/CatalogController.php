@@ -2,11 +2,16 @@
 
 namespace App\Http\Controllers;
 
+use App\Services\PricingService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
 class CatalogController extends Controller
 {
+    public function __construct(private PricingService $pricing)
+    {
+    }
+
     public function index(Request $request)
     {
         $category = trim((string) $request->query('category', ''));
@@ -71,6 +76,7 @@ class CatalogController extends Controller
 
         $paginator = $query->paginate(12)->withQueryString();
         $products = json_decode(json_encode($paginator->items()), true);
+        $products = $this->pricing->applyToMany($products);
 
         $categories = json_decode(json_encode(DB::table('categories')->orderBy('name')->get()), true);
         $allSizes = DB::table('product_sizes')->distinct()->orderBy('size_label')->pluck('size_label')->toArray();

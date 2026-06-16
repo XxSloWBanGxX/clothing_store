@@ -10610,3 +10610,129 @@ body.catalog-filters-open {
 .checkout-summary-line--discount strong {
     color: #1a7f37;
 }
+
+/* Sale page & banner */
+.site-sale-banner {
+    background: linear-gradient(90deg, #111 0%, #2d2d2d 100%);
+    color: #fff;
+    font-size: 13px;
+    padding: 10px 0;
+}
+
+.site-sale-banner-inner {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+
+.site-sale-banner-text {
+    color: #fff;
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.site-sale-banner-text:hover {
+    text-decoration: underline;
+}
+
+.site-sale-banner-timer {
+    opacity: 0.85;
+    font-variant-numeric: tabular-nums;
+}
+
+.sale-hero {
+    padding: 48px 0 24px;
+}
+
+.sale-campaigns {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 16px;
+    margin-top: 24px;
+}
+
+.sale-campaign-card {
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 20px;
+    background: #fff;
+}
+
+.sale-campaign-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 8px;
+}
+
+.sale-campaign-head h2 {
+    font-size: 18px;
+    margin: 0;
+}
+
+.sale-campaign-badge {
+    background: #111;
+    color: #fff;
+    padding: 4px 10px;
+    border-radius: 999px;
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.sale-campaign-meta {
+    margin-top: 12px;
+    font-size: 13px;
+    color: var(--muted);
+}
+
+.sale-scheduled {
+    margin-top: 24px;
+    padding: 16px;
+    border-radius: 10px;
+    background: #f7f7f7;
+}
+
+.sale-scheduled ul {
+    margin: 8px 0 0;
+    padding-left: 18px;
+}
+
+.adm-panel--info {
+    border-color: #dbeafe;
+    background: #f8fbff;
+}
+
+.adm-server-clock strong {
+    font-size: 18px;
+    font-variant-numeric: tabular-nums;
+}
+
+.adm-product-picker {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 8px;
+    max-height: 220px;
+    overflow: auto;
+    padding: 8px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+}
+
+.adm-check--inline {
+    font-size: 13px;
+}
+
+.adm-badge--info {
+    background: #dbeafe;
+    color: #1e40af;
+}
+
+.form-hint {
+    display: block;
+    margin-top: 4px;
+    font-size: 12px;
+    color: var(--muted);
+}

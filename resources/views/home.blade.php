@@ -135,16 +135,7 @@
 
                             <div class="product-info">
                                 <h3>{{ $product['name'] }}</h3>
-                                @if (! empty($product['old_price']) && (float)$product['old_price'] > (float)$product['price'])
-                                    <p class="product-price">
-                                        <span class="price-sale">{{ number_format((float)$product['price'], 0, '.', ' ') }} грн</span>
-                                        <span class="price-old">{{ number_format((float)$product['old_price'], 0, '.', ' ') }} грн</span>
-                                    </p>
-                                @else
-                                    <p class="product-price">
-                                        {{ number_format((float)$product['price'], 0, '.', ' ') }} грн
-                                    </p>
-                                @endif
+                                @include('partials.product-price', ['product' => $product])
                                 <a href="{{ url('/product/' . $product['id']) }}" class="btn btn-small">
                                     Детальніше
                                 </a>

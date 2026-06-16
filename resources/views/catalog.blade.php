@@ -243,7 +243,7 @@
                     <div class="catalog-grid-v2">
                         @foreach ($products as $product)
                             @php
-                                $onSale = ! empty($product['old_price']) && (float) $product['old_price'] > (float) $product['price'];
+                                $onSale = ! empty($product['on_sale']);
                                 $inStock = (int) ($product['stock'] ?? 0) > 0;
                             @endphp
                             <article class="catalog-item">

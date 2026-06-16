@@ -39,8 +39,12 @@
                 <input type="number" min="1" id="max_uses" name="max_uses" value="{{ old('max_uses') }}">
             </div>
             <div class="form-group">
+                <label for="starts_at">Діє з</label>
+                <input type="datetime-local" id="starts_at" name="starts_at" value="{{ old('starts_at') }}">
+            </div>
+            <div class="form-group">
                 <label for="expires_at">Діє до</label>
-                <input type="date" id="expires_at" name="expires_at" value="{{ old('expires_at') }}">
+                <input type="datetime-local" id="expires_at" name="expires_at" value="{{ old('expires_at') }}">
             </div>
             <div class="form-group adm-checkbox-row">
                 <label class="adm-check">
@@ -71,6 +75,7 @@
                     <th>Назва</th>
                     <th>Знижка</th>
                     <th>Використань</th>
+                    <th>Період</th>
                     <th>Статус</th>
                     <th>Дії</th>
                 </tr>
@@ -82,6 +87,19 @@
                         <td>{{ $promo->title }}</td>
                         <td>{{ (int) $promo->discount_percent }}%</td>
                         <td>{{ (int) $promo->uses_count }}@if($promo->max_uses) / {{ (int) $promo->max_uses }}@endif</td>
+                        <td class="adm-cell-muted">
+                            @if ($promo->starts_at)
+                                {{ \Illuminate\Support\Carbon::parse($promo->starts_at)->format('d.m.Y H:i') }}
+                            @else
+                                —
+                            @endif
+                            →
+                            @if ($promo->expires_at)
+                                {{ \Illuminate\Support\Carbon::parse($promo->expires_at)->format('d.m.Y H:i') }}
+                            @else
+                                ∞
+                            @endif
+                        </td>
                         <td>
                             @if ($promo->is_active)
                                 <span class="adm-badge adm-badge--success">Активний</span>
@@ -101,7 +119,8 @@
                                         <div class="form-group"><label>%</label><input type="number" name="discount_percent" value="{{ $promo->discount_percent }}"></div>
                                         <div class="form-group"><label>Мін. сума</label><input type="number" step="0.01" name="min_order_amount" value="{{ $promo->min_order_amount }}"></div>
                                         <div class="form-group"><label>Макс.</label><input type="number" name="max_uses" value="{{ $promo->max_uses }}"></div>
-                                        <div class="form-group"><label>До</label><input type="date" name="expires_at" value="{{ $promo->expires_at ? \Illuminate\Support\Carbon::parse($promo->expires_at)->format('Y-m-d') : '' }}"></div>
+                                        <div class="form-group"><label>З</label><input type="datetime-local" name="starts_at" value="{{ $promo->starts_at ? \Illuminate\Support\Carbon::parse($promo->starts_at)->format('Y-m-d\TH:i') : '' }}"></div>
+                                        <div class="form-group"><label>До</label><input type="datetime-local" name="expires_at" value="{{ $promo->expires_at ? \Illuminate\Support\Carbon::parse($promo->expires_at)->format('Y-m-d\TH:i') : '' }}"></div>
                                         <div class="form-group adm-checkbox-row">
                                             <label class="adm-check"><input type="checkbox" name="is_active" value="1" {{ $promo->is_active ? 'checked' : '' }}><span>Активний</span></label>
                                         </div>
@@ -117,7 +136,7 @@
                         </td>
                     </tr>
                 @empty
-                    <tr><td colspan="6">Промокодів ще немає.</td></tr>
+                    <tr><td colspan="7">Промокодів ще немає.</td></tr>
                 @endforelse
             </tbody>
         </table>

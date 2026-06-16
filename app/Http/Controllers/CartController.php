@@ -2,11 +2,16 @@
 
 namespace App\Http\Controllers;
 
+use App\Services\PricingService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
 class CartController extends Controller
 {
+    public function __construct(private PricingService $pricing)
+    {
+    }
+
     public function index()
     {
         $cart = session('cart', []);
@@ -14,12 +19,21 @@ class CartController extends Controller
         $cartItems = [];
         $total = 0;
 
-        foreach ($cart as $item) {
+        foreach ($cart as $productId => $item) {
+            $product = DB::table('products')->where('id', $productId)->first();
+            if ($product) {
+                $effectivePrice = $this->pricing->getEffectivePrice($product);
+                $item['price'] = $effectivePrice;
+                $cart[$productId]['price'] = $effectivePrice;
+            }
+
             $subtotal = (float) $item['price'] * (int) $item['quantity'];
             $total += $subtotal;
 
             $cartItems[] = array_merge($item, ['subtotal' => $subtotal]);
         }
+
+        session(['cart' => $cart]);
 
         return view('cart', compact('cartItems', 'total'));
     }
@@ -48,11 +62,12 @@ class CartController extends Controller
 
         if (isset($cart[$productId])) {
             $cart[$productId]['quantity'] += $qty;
+            $cart[$productId]['price'] = $this->pricing->getEffectivePrice($product);
         } else {
             $cart[$productId] = [
                 'id' => $product->id,
                 'name' => $product->name,
-                'price' => $product->price,
+                'price' => $this->pricing->getEffectivePrice($product),
                 'image' => $product->image,
                 'quantity' => $qty,
                 'selected_size' => $request->input('selected_size'),

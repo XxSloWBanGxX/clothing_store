@@ -88,6 +88,10 @@
                     <span class="adm-nav-icon">🏷</span>
                     <span>Промокоди</span>
                 </a>
+                <a href="{{ url('/admin/sales') }}" class="adm-nav-link {{ request()->is('admin/sales*') ? 'is-active' : '' }}">
+                    <span class="adm-nav-icon">%</span>
+                    <span>Акції / знижки</span>
+                </a>
                 <a href="{{ url('/admin/newsletter') }}" class="adm-nav-link {{ request()->is('admin/newsletter*') ? 'is-active' : '' }}">
                     <span class="adm-nav-icon">📧</span>
                     <span>Розсилка</span>
