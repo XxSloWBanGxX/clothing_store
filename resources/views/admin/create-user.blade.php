@@ -3,10 +3,15 @@
 @section('title', 'Створити користувача')
 
 @section('admin_content')
+@include('partials.admin-flash')
 
-<section class="admin-panel-box">
-    <div class="admin-panel-head">
-        <h2>Створити користувача</h2>
+<section class="adm-panel">
+    <div class="adm-panel-head">
+        <div>
+            <h2>Створити користувача</h2>
+            <p>Новий акаунт з обраною роллю</p>
+        </div>
+        <a href="{{ url('/admin/users') }}" class="adm-back-link">← До списку</a>
     </div>
 
     <form action="{{ url('/admin/users') }}" method="POST" class="admin-form">
@@ -45,10 +50,10 @@
 
             <div class="form-group">
                 <label for="role">Роль</label>
-                <select id="role" name="role">
-                    <option value="user" {{ old('role') === 'user' ? 'selected' : '' }}>user</option>
-                    <option value="support" {{ old('role') === 'support' ? 'selected' : '' }}>support</option>
-                    <option value="admin" {{ old('role') === 'admin' ? 'selected' : '' }}>admin</option>
+                <select id="role" name="role" class="adm-select adm-select--block">
+                    <option value="user" {{ old('role') === 'user' ? 'selected' : '' }}>Користувач</option>
+                    <option value="support" {{ old('role') === 'support' ? 'selected' : '' }}>Підтримка</option>
+                    <option value="admin" {{ old('role') === 'admin' ? 'selected' : '' }}>Адмін</option>
                 </select>
                 @error('role')<small class="form-error">{{ $message }}</small>@enderror
             </div>
@@ -63,9 +68,8 @@
 
         <div class="admin-form-actions">
             <button type="submit" class="btn btn-dark">Створити користувача</button>
-            <a href="{{ url('/admin/users') }}" class="btn btn-light">Назад</a>
+            <a href="{{ url('/admin/users') }}" class="btn btn-light">Скасувати</a>
         </div>
     </form>
 </section>
-
 @endsection

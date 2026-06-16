@@ -8,15 +8,39 @@ use Illuminate\Validation\Rule;
 
 class AdminOrderController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $orders = DB::table('orders')
+        $query = DB::table('orders')
             ->leftJoin('users', 'users.id', '=', 'orders.user_id')
-            ->select('orders.*', 'users.username as username')
-            ->orderBy('orders.id', 'desc')
-            ->get();
+            ->select('orders.*', 'users.username as username');
 
-        return view('admin.orders', compact('orders'));
+        $search = trim((string) $request->query('q', ''));
+        if ($search !== '') {
+            $query->where(function ($builder) use ($search) {
+                $builder->where('orders.full_name', 'like', '%' . $search . '%')
+                    ->orWhere('orders.phone', 'like', '%' . $search . '%')
+                    ->orWhere('orders.email', 'like', '%' . $search . '%');
+
+                if (ctype_digit($search)) {
+                    $builder->orWhere('orders.id', (int) $search);
+                }
+            });
+        }
+
+        $statusFilter = trim((string) $request->query('status', ''));
+        if ($statusFilter !== '') {
+            $query->where('orders.status', $statusFilter);
+        }
+
+        $orders = $query->orderByDesc('orders.id')->get();
+
+        $statusLabels = AdminController::orderStatusLabels();
+        $filters = [
+            'q' => $search,
+            'status' => $statusFilter,
+        ];
+
+        return view('admin.orders', compact('orders', 'statusLabels', 'filters'));
     }
 
     public function show($id)
@@ -32,8 +56,11 @@ class AdminOrderController extends Controller
         }
 
         $items = DB::table('order_items')->where('order_id', $id)->get();
+        $statusLabels = AdminController::orderStatusLabels();
+        $deliveryLabels = AdminController::deliveryLabels();
+        $paymentLabels = AdminController::paymentLabels();
 
-        return view('admin.order-show', compact('order', 'items'));
+        return view('admin.order-show', compact('order', 'items', 'statusLabels', 'deliveryLabels', 'paymentLabels'));
     }
 
     public function updateStatus(Request $request, $id)

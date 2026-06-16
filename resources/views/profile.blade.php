@@ -49,6 +49,14 @@
                         <span class="staff-nav-icon">💬</span>
                         Історія відгуків
                     </a>
+                    <a href="{{ url('/profile?tab=messages') }}" class="staff-profile-nav-link {{ $activeTab === 'messages' ? 'active' : '' }}">
+                        <span class="staff-nav-icon">✉</span>
+                        Повідомлення
+                        @php $unreadMessages = ($conversations ?? collect())->sum('unread_count'); @endphp
+                        @if ($unreadMessages > 0)
+                            <span class="staff-nav-badge">{{ (int) $unreadMessages }}</span>
+                        @endif
+                    </a>
                 </nav>
 
                 <div class="staff-profile-sidebar-footer">
@@ -342,6 +350,67 @@
                             <a href="{{ url('/catalog') }}" class="btn btn-dark">До каталогу</a>
                         </div>
                     @endif
+                @endif
+
+                @if ($activeTab === 'messages')
+                    <div class="staff-panel-head">
+                        <div>
+                            <h2>Повідомлення</h2>
+                            <p class="staff-panel-sub">Чат з підтримкою магазину</p>
+                        </div>
+                    </div>
+
+                    @if (session('messageSuccess'))
+                        <div class="alert-success">{{ session('messageSuccess') }}</div>
+                    @endif
+
+                    <div class="staff-messages-layout">
+                        <aside class="staff-messages-list">
+                            @forelse ($conversations as $conversation)
+                                <a href="{{ url('/profile?tab=messages&conversation=' . $conversation->id) }}" class="staff-message-link {{ (int) ($activeConversationId ?? 0) === (int) $conversation->id ? 'active' : '' }}">
+                                    <strong>{{ $conversation->subject }}</strong>
+                                    <span>{{ \Illuminate\Support\Str::limit($conversation->last_preview, 60) }}</span>
+                                    @if ((int) $conversation->unread_count > 0)
+                                        <em class="staff-message-unread">{{ (int) $conversation->unread_count }} нових</em>
+                                    @endif
+                                </a>
+                            @empty
+                                <div class="staff-empty compact">
+                                    <p>Ще немає діалогів. Напиши нам через кнопку «Підтримка» на сайті.</p>
+                                </div>
+                            @endforelse
+                        </aside>
+
+                        <div class="staff-messages-thread">
+                            @if ($activeConversation)
+                                <div class="staff-chat-thread">
+                                    @foreach ($conversationMessages as $chatMessage)
+                                        <article class="staff-chat-bubble {{ $chatMessage->sender_role === 'admin' ? 'is-admin' : 'is-user' }}">
+                                            <strong>{{ $chatMessage->sender_role === 'admin' ? 'Підтримка CLOTHSTORE' : 'Ти' }}</strong>
+                                            <p>{{ $chatMessage->body }}</p>
+                                            <small>{{ $chatMessage->created_at }}</small>
+                                        </article>
+                                    @endforeach
+                                </div>
+
+                                @if ($activeConversation->status === 'open')
+                                    <form action="{{ url('/profile/messages/' . $activeConversation->id . '/reply') }}" method="POST" class="staff-chat-reply">
+                                        @csrf
+                                        <textarea name="body" rows="4" placeholder="Напиши відповідь..." required>{{ old('body') }}</textarea>
+                                        @error('body')<small class="form-error">{{ $message }}</small>@enderror
+                                        <button type="submit" class="btn btn-dark">Надіслати</button>
+                                    </form>
+                                @else
+                                    <p class="staff-panel-sub">Діалог закрито. Напиши нове звернення через підтримку на сайті.</p>
+                                @endif
+                            @else
+                                <div class="staff-empty">
+                                    <h3>Обери діалог зліва</h3>
+                                    <p>Тут зʼявиться переписка з магазином.</p>
+                                </div>
+                            @endif
+                        </div>
+                    </div>
                 @endif
             </div>
         </div>

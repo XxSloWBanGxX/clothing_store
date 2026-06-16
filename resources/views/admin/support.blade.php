@@ -3,68 +3,66 @@
 @section('title', 'Підтримка')
 
 @section('admin_content')
+@include('partials.admin-flash')
 
-@if (session('status'))
-    <div class="alert-success">{{ session('status') }}</div>
-@endif
-
-<section class="admin-panel-box">
-    <div class="admin-panel-head">
-        <h2>Звернення в підтримку</h2>
+<section class="adm-panel">
+    <div class="adm-panel-head">
+        <div>
+            <h2>Звернення в підтримку</h2>
+            <p>{{ $messages->count() }} повідомлень</p>
+        </div>
     </div>
 
-    <div class="admin-table-wrap">
-        <table class="admin-table">
-            <thead>
-                <tr>
-                    <th>ID</th>
-                    <th>Імʼя</th>
-                    <th>Email</th>
-                    <th>Повідомлення</th>
-                    <th>Статус</th>
-                    <th>Дата</th>
-                    <th>Дії</th>
-                </tr>
-            </thead>
-            <tbody>
-                @forelse ($messages as $msg)
-                    <tr>
-                        <td>#{{ (int) $msg->id }}</td>
-                        <td>{{ $msg->name }}</td>
-                        <td>{{ $msg->email }}</td>
-                        <td style="max-width:340px; white-space:normal;">{{ $msg->message }}</td>
-                        <td>
-                            @if ($msg->status === 'resolved')
-                                <span class="admin-badge success">Опрацьовано</span>
-                            @else
-                                <span class="admin-badge danger">Нове</span>
-                            @endif
-                        </td>
-                        <td>{{ $msg->created_at }}</td>
-                        <td>
-                            <div class="admin-actions">
-                                @if ($msg->status !== 'resolved')
-                                    <form action="{{ url('/admin/support/' . $msg->id . '/resolve') }}" method="POST">
-                                        @csrf
-                                        <button type="submit" class="btn btn-light btn-sm">Опрацьовано</button>
-                                    </form>
-                                @endif
-                                <form action="{{ url('/admin/support/' . $msg->id) }}" method="POST" onsubmit="return confirm('Видалити звернення?');">
-                                    @csrf
-                                    @method('DELETE')
-                                    <button type="submit" class="btn btn-dark btn-sm">Видалити</button>
-                                </form>
-                            </div>
-                        </td>
-                    </tr>
-                @empty
-                    <tr>
-                        <td colspan="7">Звернень ще немає.</td>
-                    </tr>
-                @endforelse
-            </tbody>
-        </table>
+    <form action="{{ url('/admin/support') }}" method="GET" class="adm-toolbar">
+        <select name="status" class="adm-select">
+            <option value="">Усі звернення</option>
+            <option value="new" {{ ($statusFilter ?? '') === 'new' ? 'selected' : '' }}>Нові</option>
+            <option value="resolved" {{ ($statusFilter ?? '') === 'resolved' ? 'selected' : '' }}>Опрацьовані</option>
+        </select>
+        <button type="submit" class="btn btn-dark btn-sm">Фільтрувати</button>
+        @if (! empty($statusFilter))
+            <a href="{{ url('/admin/support') }}" class="btn btn-light btn-sm">Скинути</a>
+        @endif
+    </form>
+
+    <div class="adm-support-list">
+        @forelse ($messages as $msg)
+            <article class="adm-support-card {{ $msg->status === 'resolved' ? 'is-resolved' : '' }}">
+                <div class="adm-support-head">
+                    <div>
+                        <strong>{{ $msg->name }}</strong>
+                        <span class="adm-cell-muted">{{ $msg->email }}</span>
+                    </div>
+                    <div class="adm-support-meta">
+                        @if ($msg->status === 'resolved')
+                            <span class="adm-badge adm-badge--success">Опрацьовано</span>
+                        @else
+                            <span class="adm-badge adm-badge--warning">Нове</span>
+                        @endif
+                        <span class="adm-cell-muted">{{ $msg->created_at }}</span>
+                    </div>
+                </div>
+                <p class="adm-support-text">{{ $msg->message }}</p>
+                <div class="adm-row-actions">
+                    @if ($msg->status !== 'resolved')
+                        <form action="{{ url('/admin/support/' . $msg->id . '/resolve') }}" method="POST">
+                            @csrf
+                            <button type="submit" class="btn btn-dark btn-sm">Позначити опрацьованим</button>
+                        </form>
+                    @endif
+                    <form action="{{ url('/admin/support/' . $msg->id) }}" method="POST" onsubmit="return confirm('Видалити звернення?');">
+                        @csrf
+                        @method('DELETE')
+                        <button type="submit" class="btn btn-light btn-sm">Видалити</button>
+                    </form>
+                </div>
+            </article>
+        @empty
+            <div class="adm-empty">
+                <h3>Звернень немає</h3>
+                <p>Нові повідомлення з форми підтримки зʼявляться тут.</p>
+            </div>
+        @endforelse
     </div>
 </section>
-
 @endsection

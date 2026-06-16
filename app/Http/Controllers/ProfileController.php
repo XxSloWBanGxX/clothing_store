@@ -42,9 +42,60 @@ class ProfileController extends Controller
         $bonusPoints = $userRow->bonus_points ?? 0;
         $activeTab = request('tab', 'settings');
         $deliverySaved = UserDeliveryStorage::pickerSaved($userRow, old('delivery_carrier'));
+        $activeConversationId = (int) request('conversation', 0);
 
-        if (! in_array($activeTab, ['settings', 'orders', 'promos', 'bonus', 'reviews'], true)) {
+        $conversations = collect();
+        $conversationMessages = collect();
+        $activeConversation = null;
+
+        if (Schema::hasTable('conversations')) {
+            $conversations = DB::table('conversations')
+                ->where('user_id', $user->id)
+                ->orderByDesc('last_message_at')
+                ->orderByDesc('id')
+                ->get()
+                ->map(function ($row) use ($user) {
+                    $row->unread_count = (int) DB::table('conversation_messages')
+                        ->where('conversation_id', $row->id)
+                        ->where('sender_role', 'admin')
+                        ->whereNull('read_at')
+                        ->count();
+
+                    $row->last_preview = DB::table('conversation_messages')
+                        ->where('conversation_id', $row->id)
+                        ->orderByDesc('id')
+                        ->value('body');
+
+                    return $row;
+                });
+
+            if ($activeConversationId > 0) {
+                $activeConversation = DB::table('conversations')
+                    ->where('id', $activeConversationId)
+                    ->where('user_id', $user->id)
+                    ->first();
+
+                if ($activeConversation) {
+                    DB::table('conversation_messages')
+                        ->where('conversation_id', $activeConversationId)
+                        ->where('sender_role', 'admin')
+                        ->whereNull('read_at')
+                        ->update(['read_at' => now()]);
+
+                    $conversationMessages = DB::table('conversation_messages')
+                        ->where('conversation_id', $activeConversationId)
+                        ->orderBy('id')
+                        ->get();
+                }
+            }
+        }
+
+        if (! in_array($activeTab, ['settings', 'orders', 'promos', 'bonus', 'reviews', 'messages'], true)) {
             $activeTab = 'settings';
+        }
+
+        if ($activeConversation && $activeTab !== 'messages') {
+            $activeTab = 'messages';
         }
 
         return view('profile', compact(
@@ -56,7 +107,11 @@ class ProfileController extends Controller
             'bonusHistory',
             'bonusPoints',
             'activeTab',
-            'deliverySaved'
+            'deliverySaved',
+            'conversations',
+            'conversationMessages',
+            'activeConversation',
+            'activeConversationId'
         ));
     }
 

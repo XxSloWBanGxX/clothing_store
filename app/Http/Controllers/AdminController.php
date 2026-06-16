@@ -3,15 +3,59 @@
 namespace App\Http\Controllers;
 
 use App\Models\Product;
+use App\Services\Delivery\UserDeliveryStorage;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 
 class AdminController extends Controller
 {
+    public static function orderStatusLabels(): array
+    {
+        return [
+            'new' => 'Нове',
+            'processing' => 'В обробці',
+            'sent' => 'Відправлено',
+            'completed' => 'Виконано',
+            'cancelled' => 'Скасовано',
+        ];
+    }
+
+    public static function orderStatusTone(string $status): string
+    {
+        return match ($status) {
+            'new' => 'warning',
+            'processing' => 'info',
+            'sent' => 'purple',
+            'completed' => 'success',
+            'cancelled' => 'danger',
+            default => 'neutral',
+        };
+    }
+
+    public static function deliveryLabels(): array
+    {
+        return [
+            'nova_poshta' => 'Нова Пошта',
+            'ukrposhta' => 'Укрпошта',
+            'meest' => 'Meest',
+            'courier' => 'Курʼєр',
+            'pickup' => 'Самовивіз',
+        ];
+    }
+
+    public static function paymentLabels(): array
+    {
+        return [
+            'cash_on_delivery' => 'Оплата при отриманні',
+            'card' => 'Картка онлайн',
+        ];
+    }
+
     private function uploadDir(): string
     {
         $dir = public_path('assets/images/products');
@@ -103,24 +147,87 @@ class AdminController extends Controller
         $stats = [
             'products' => DB::table('products')->count(),
             'inStock' => DB::table('products')->where('stock', '>', 0)->count(),
+            'outOfStock' => DB::table('products')->where('stock', '<=', 0)->count(),
             'featured' => DB::table('products')->where('is_featured', 1)->count(),
             'categories' => DB::table('categories')->count(),
             'users' => DB::table('users')->count(),
-            'support' => DB::table('users')->where('role', 'support')->count(),
+            'orders' => DB::table('orders')->count(),
+            'ordersNew' => DB::table('orders')->where('status', 'new')->count(),
+            'reviews' => DB::table('reviews')->count(),
+            'support' => DB::table('support_messages')->where('status', '!=', 'resolved')->count(),
         ];
 
-        return view('admin.dashboard', compact('stats'));
-    }
+        $stats['revenueTotal'] = (float) DB::table('orders')
+            ->where('status', '!=', 'cancelled')
+            ->sum('total_amount');
 
-    public function products()
-    {
-        $products = DB::table('products')
-            ->join('categories', 'categories.id', '=', 'products.category_id')
-            ->select('products.*', 'categories.name as category_name')
-            ->orderBy('products.id', 'desc')
+        $stats['revenueMonth'] = (float) DB::table('orders')
+            ->where('status', '!=', 'cancelled')
+            ->whereMonth('created_at', now()->month)
+            ->whereYear('created_at', now()->year)
+            ->sum('total_amount');
+
+        $recentOrders = DB::table('orders')
+            ->leftJoin('users', 'users.id', '=', 'orders.user_id')
+            ->select('orders.*', 'users.username as username')
+            ->orderByDesc('orders.id')
+            ->limit(6)
             ->get();
 
-        return view('admin.products', compact('products'));
+        $lowStockProducts = DB::table('products')
+            ->join('categories', 'categories.id', '=', 'products.category_id')
+            ->select('products.*', 'categories.name as category_name')
+            ->where('products.stock', '<=', 5)
+            ->orderBy('products.stock')
+            ->limit(8)
+            ->get();
+
+        $statusLabels = self::orderStatusLabels();
+
+        return view('admin.dashboard', compact('stats', 'recentOrders', 'lowStockProducts', 'statusLabels'));
+    }
+
+    public function products(Request $request)
+    {
+        $query = DB::table('products')
+            ->join('categories', 'categories.id', '=', 'products.category_id')
+            ->select('products.*', 'categories.name as category_name');
+
+        $search = trim((string) $request->query('q', ''));
+        if ($search !== '') {
+            $query->where(function ($builder) use ($search) {
+                $builder->where('products.name', 'like', '%' . $search . '%')
+                    ->orWhere('products.slug', 'like', '%' . $search . '%');
+            });
+        }
+
+        $categoryId = (int) $request->query('category', 0);
+        if ($categoryId > 0) {
+            $query->where('products.category_id', $categoryId);
+        }
+
+        $stockFilter = (string) $request->query('stock', '');
+        if ($stockFilter === 'in') {
+            $query->where('products.stock', '>', 0);
+        } elseif ($stockFilter === 'out') {
+            $query->where('products.stock', '<=', 0);
+        } elseif ($stockFilter === 'low') {
+            $query->whereBetween('products.stock', [1, 5]);
+        } elseif ($stockFilter === 'sale') {
+            $query->whereNotNull('products.old_price')
+                ->whereColumn('products.old_price', '>', 'products.price');
+        }
+
+        $products = $query->orderByDesc('products.id')->get();
+        $categories = DB::table('categories')->orderBy('name')->get();
+
+        $filters = [
+            'q' => $search,
+            'category' => $categoryId ?: '',
+            'stock' => $stockFilter,
+        ];
+
+        return view('admin.products', compact('products', 'categories', 'filters'));
     }
 
     public function create()
@@ -214,10 +321,26 @@ class AdminController extends Controller
         }
 
         $mainImageToSave = $product->image;
+        $mainSource = trim((string) $request->input('main_image_source', 'current'));
 
         if ($request->hasFile('main_image')) {
-            $this->deletePhysicalFile($product->image);
+            if ($product->image && ! str_starts_with($mainSource, 'gallery:')) {
+                $this->deletePhysicalFile($product->image);
+            }
             $mainImageToSave = $this->storeImage($request->file('main_image'));
+        } elseif (str_starts_with($mainSource, 'gallery:')) {
+            $galleryId = (int) substr($mainSource, 8);
+            $galleryImage = DB::table('product_images')
+                ->where('id', $galleryId)
+                ->where('product_id', $id)
+                ->first();
+
+            if ($galleryImage) {
+                $mainImageToSave = $galleryImage->image_path;
+            }
+        } elseif ($mainSource === 'remove_main') {
+            $this->deletePhysicalFile($product->image);
+            $mainImageToSave = null;
         }
 
         DB::table('products')->where('id', $id)->update([
@@ -243,6 +366,7 @@ class AdminController extends Controller
         }
 
         $this->syncGalleryNew($id, $request);
+        $this->applyGalleryOrder($id, (string) $request->input('gallery_order', ''));
 
         DB::table('product_sizes')->where('product_id', $id)->delete();
         $this->syncSizes($id, $request->input('sizes', []));
@@ -294,6 +418,18 @@ class AdminController extends Controller
                 'image_path' => $name,
                 'sort_order' => $sortOrder++,
             ]);
+        }
+    }
+
+    private function applyGalleryOrder(int $productId, string $raw): void
+    {
+        $ids = array_values(array_filter(array_map('intval', explode(',', $raw))));
+
+        foreach ($ids as $index => $imageId) {
+            DB::table('product_images')
+                ->where('id', $imageId)
+                ->where('product_id', $productId)
+                ->update(['sort_order' => $index + 1]);
         }
     }
 
@@ -411,11 +547,19 @@ class AdminController extends Controller
 
     public function support()
     {
-        $messages = DB::table('support_messages')
-            ->orderBy('id', 'desc')
-            ->get();
+        $statusFilter = request()->query('status', '');
 
-        return view('admin.support', compact('messages'));
+        $query = DB::table('support_messages')->orderByDesc('id');
+
+        if ($statusFilter === 'new') {
+            $query->where('status', '!=', 'resolved');
+        } elseif ($statusFilter === 'resolved') {
+            $query->where('status', 'resolved');
+        }
+
+        $messages = $query->get();
+
+        return view('admin.support', compact('messages', 'statusFilter'));
     }
 
     public function resolveSupport($id)
@@ -432,11 +576,106 @@ class AdminController extends Controller
         return redirect('/admin/support')->with('status', 'Звернення видалено');
     }
 
-    public function users()
+    public function users(Request $request)
     {
-        $users = DB::table('users')->orderBy('id', 'desc')->get();
+        $query = DB::table('users')->orderByDesc('id');
 
-        return view('admin.users', compact('users'));
+        $search = trim((string) $request->query('q', ''));
+        if ($search !== '') {
+            $query->where(function ($builder) use ($search) {
+                $builder->where('name', 'like', '%' . $search . '%')
+                    ->orWhere('username', 'like', '%' . $search . '%')
+                    ->orWhere('email', 'like', '%' . $search . '%')
+                    ->orWhere('phone', 'like', '%' . $search . '%');
+            });
+        }
+
+        $roleFilter = trim((string) $request->query('role', ''));
+        if ($roleFilter !== '') {
+            $query->where('role', $roleFilter);
+        }
+
+        $users = $query->get();
+
+        return view('admin.users', compact('users', 'search', 'roleFilter'));
+    }
+
+    public function showUser($id)
+    {
+        $user = DB::table('users')->where('id', $id)->first();
+
+        if (! $user) {
+            abort(404, 'Користувача не знайдено');
+        }
+
+        $orders = DB::table('orders')
+            ->where('user_id', $id)
+            ->orderByDesc('id')
+            ->get();
+
+        $orderIds = $orders->pluck('id')->all();
+        $orderItems = collect();
+
+        if (! empty($orderIds)) {
+            $orderItems = DB::table('order_items')
+                ->whereIn('order_id', $orderIds)
+                ->get()
+                ->groupBy('order_id');
+        }
+
+        $reviews = collect();
+        if (Schema::hasTable('reviews')) {
+            $reviews = DB::table('reviews')
+                ->leftJoin('products', 'products.id', '=', 'reviews.product_id')
+                ->where('reviews.user_id', $id)
+                ->orderByDesc('reviews.id')
+                ->select('reviews.*', 'products.name as product_name')
+                ->get();
+        }
+
+        $promocodes = Schema::hasTable('user_promocodes')
+            ? DB::table('user_promocodes')->where('user_id', $id)->orderByDesc('id')->get()
+            : collect();
+
+        $bonusHistory = Schema::hasTable('bonus_history')
+            ? DB::table('bonus_history')->where('user_id', $id)->orderByDesc('id')->get()
+            : collect();
+
+        $conversations = Schema::hasTable('conversations')
+            ? DB::table('conversations')->where('user_id', $id)->orderByDesc('last_message_at')->get()
+            : collect();
+
+        $deliveryAll = UserDeliveryStorage::all($user);
+        $deliveryLabels = self::deliveryLabels();
+        $statusLabels = self::orderStatusLabels();
+        $paymentLabels = self::paymentLabels();
+
+        $completedOrders = $orders->where('status', '!=', 'cancelled');
+        $stats = [
+            'orders' => $orders->count(),
+            'spent' => (float) $completedOrders->sum('total_amount'),
+            'avg' => $completedOrders->count() > 0
+                ? (float) $completedOrders->avg('total_amount')
+                : 0,
+            'reviews' => $reviews->count(),
+            'bonus' => (int) ($user->bonus_points ?? 0),
+            'last_order_at' => $orders->first()->created_at ?? null,
+        ];
+
+        return view('admin.user-show', compact(
+            'user',
+            'orders',
+            'orderItems',
+            'reviews',
+            'promocodes',
+            'bonusHistory',
+            'conversations',
+            'deliveryAll',
+            'deliveryLabels',
+            'statusLabels',
+            'paymentLabels',
+            'stats'
+        ));
     }
 
     public function createUser()
@@ -488,5 +727,27 @@ class AdminController extends Controller
         }
 
         return redirect('/admin/users')->with('status', 'Користувача видалено');
+    }
+
+    public function reviews()
+    {
+        $reviews = DB::table('reviews')
+            ->join('products', 'products.id', '=', 'reviews.product_id')
+            ->select(
+                'reviews.*',
+                'products.name as product_name',
+                'products.slug as product_slug'
+            )
+            ->orderByDesc('reviews.id')
+            ->get();
+
+        return view('admin.reviews', compact('reviews'));
+    }
+
+    public function destroyReview($id)
+    {
+        DB::table('reviews')->where('id', $id)->delete();
+
+        return redirect('/admin/reviews')->with('status', 'Відгук видалено');
     }
 }

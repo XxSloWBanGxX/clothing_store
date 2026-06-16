@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
 
@@ -47,6 +48,29 @@ class AppServiceProvider extends ServiceProvider
                 'cartCount' => $cartCount,
                 'favCount' => $favCount,
             ]);
+        });
+
+        View::composer('admin.*', function ($view) {
+            $adminNav = [
+                'orders_new' => 0,
+                'support_new' => 0,
+            ];
+
+            try {
+                $adminNav['orders_new'] = (int) DB::table('orders')->where('status', 'new')->count();
+                $adminNav['support_new'] = (int) DB::table('support_messages')->where('status', '!=', 'resolved')->count();
+
+                if (Schema::hasTable('conversation_messages')) {
+                    $adminNav['messages_unread'] = (int) DB::table('conversation_messages')
+                        ->where('sender_role', 'user')
+                        ->whereNull('read_at')
+                        ->count();
+                }
+            } catch (\Throwable $e) {
+                //
+            }
+
+            $view->with('adminNav', $adminNav);
         });
     }
 }

@@ -3,21 +3,17 @@
 @section('title', 'Категорії')
 
 @section('admin_content')
+@include('partials.admin-flash')
 
-@if (session('status'))
-    <div class="alert-success">{{ session('status') }}</div>
-@endif
-
-@if ($errors->has('delete'))
-    <div class="alert-error">{{ $errors->first('delete') }}</div>
-@endif
-
-<section class="admin-panel-box">
-    <div class="admin-panel-head">
-        <h2>Додати категорію</h2>
+<section class="adm-panel">
+    <div class="adm-panel-head">
+        <div>
+            <h2>Додати категорію</h2>
+            <p>Нова категорія зʼявиться в каталозі</p>
+        </div>
     </div>
 
-    <form action="{{ url('/admin/categories') }}" method="POST" class="admin-form">
+    <form action="{{ url('/admin/categories') }}" method="POST" class="adm-form">
         @csrf
         <div class="admin-form-grid">
             <div class="form-group">
@@ -25,27 +21,28 @@
                 <input type="text" id="name" name="name" value="{{ old('name') }}" placeholder="Напр.: Аксесуари">
                 @error('name')<small class="form-error">{{ $message }}</small>@enderror
             </div>
-
             <div class="form-group">
                 <label for="slug">Slug (необовʼязково)</label>
                 <input type="text" id="slug" name="slug" value="{{ old('slug') }}" placeholder="accessories">
                 @error('slug')<small class="form-error">{{ $message }}</small>@enderror
             </div>
         </div>
-
         <div class="admin-form-actions">
             <button type="submit" class="btn btn-dark">Створити категорію</button>
         </div>
     </form>
 </section>
 
-<section class="admin-panel-box">
-    <div class="admin-panel-head">
-        <h2>Усі категорії</h2>
+<section class="adm-panel">
+    <div class="adm-panel-head">
+        <div>
+            <h2>Усі категорії</h2>
+            <p>{{ $categories->count() }} категорій</p>
+        </div>
     </div>
 
-    <div class="admin-table-wrap">
-        <table class="admin-table">
+    <div class="adm-table-wrap">
+        <table class="adm-table">
             <thead>
                 <tr>
                     <th>ID</th>
@@ -59,16 +56,16 @@
                 @forelse ($categories as $category)
                     <tr>
                         <td>#{{ (int) $category->id }}</td>
-                        <td>{{ $category->name }}</td>
+                        <td><strong>{{ $category->name }}</strong></td>
                         <td>{{ $category->slug }}</td>
-                        <td>{{ (int) $category->products_count }}</td>
+                        <td><span class="adm-badge adm-badge--neutral">{{ (int) $category->products_count }}</span></td>
                         <td>
-                            <div class="admin-actions">
-                                <a href="{{ url('/catalog?category=' . $category->slug) }}" class="btn btn-light btn-sm" target="_blank">Переглянути</a>
+                            <div class="adm-row-actions">
+                                <a href="{{ url('/catalog?category=' . $category->slug) }}" class="btn btn-light btn-sm" target="_blank">На сайті</a>
                                 <form action="{{ url('/admin/categories/' . $category->id) }}" method="POST" onsubmit="return confirm('Видалити категорію?');">
                                     @csrf
                                     @method('DELETE')
-                                    <button type="submit" class="btn btn-dark btn-sm">Видалити</button>
+                                    <button type="submit" class="btn btn-light btn-sm">Видалити</button>
                                 </form>
                             </div>
                         </td>
@@ -82,5 +79,4 @@
         </table>
     </div>
 </section>
-
 @endsection

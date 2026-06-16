@@ -17,6 +17,9 @@ use App\Http\Controllers\SupportController;
 use App\Http\Controllers\DeliveryController;
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\AdminOrderController;
+use App\Http\Controllers\AdminMessageController;
+use App\Http\Controllers\AdminProductImportController;
+use App\Http\Controllers\MessageController;
 
 Route::get('/', [HomeController::class, 'index']);
 Route::get('/catalog', [CatalogController::class, 'index']);
@@ -50,6 +53,7 @@ Route::middleware('auth')->group(function () {
     Route::post('/profile/password', [ProfileController::class, 'changePassword']);
     Route::get('/profile/order/{id}', [ProfileController::class, 'order']);
     Route::post('/profile/order/{id}/cancel', [ProfileController::class, 'cancelOrder']);
+    Route::post('/profile/messages/{id}/reply', [MessageController::class, 'reply']);
 
     Route::get('/api/delivery/cities', [DeliveryController::class, 'cities']);
     Route::get('/api/delivery/points', [DeliveryController::class, 'points']);
@@ -78,6 +82,9 @@ Route::middleware('admin')->prefix('admin')->group(function () {
 
     Route::get('/products', [AdminController::class, 'products']);
     Route::get('/products/create', [AdminController::class, 'create']);
+    Route::get('/products/import', [AdminProductImportController::class, 'form']);
+    Route::get('/products/import/template', [AdminProductImportController::class, 'template']);
+    Route::post('/products/import', [AdminProductImportController::class, 'store']);
     Route::post('/products', [AdminController::class, 'store']);
     Route::get('/products/{id}/edit', [AdminController::class, 'edit']);
     Route::put('/products/{id}', [AdminController::class, 'update']);
@@ -91,9 +98,19 @@ Route::middleware('admin')->prefix('admin')->group(function () {
     Route::post('/support/{id}/resolve', [AdminController::class, 'resolveSupport']);
     Route::delete('/support/{id}', [AdminController::class, 'destroySupport']);
 
+    Route::get('/reviews', [AdminController::class, 'reviews']);
+    Route::delete('/reviews/{id}', [AdminController::class, 'destroyReview']);
+
+    Route::get('/messages', [AdminMessageController::class, 'index']);
+    Route::post('/messages/start', [AdminMessageController::class, 'start']);
+    Route::get('/messages/{id}', [AdminMessageController::class, 'show']);
+    Route::post('/messages/{id}/reply', [AdminMessageController::class, 'reply']);
+    Route::post('/messages/{id}/close', [AdminMessageController::class, 'close']);
+
     Route::get('/users', [AdminController::class, 'users']);
     Route::get('/users/create', [AdminController::class, 'createUser']);
     Route::post('/users', [AdminController::class, 'storeUser']);
+    Route::get('/users/{id}', [AdminController::class, 'showUser']);
     Route::delete('/users/{id}', [AdminController::class, 'destroyUser']);
 
     Route::get('/orders', [AdminOrderController::class, 'index']);
