@@ -26,6 +26,8 @@ use App\Http\Controllers\AdminSaleController;
 use App\Http\Controllers\AdminNewsletterController;
 use App\Http\Controllers\NewsletterController;
 use App\Http\Controllers\MessageController;
+use App\Http\Controllers\StockAlertController;
+use App\Http\Controllers\ShippingQuoteController;
 
 Route::get('/', [HomeController::class, 'index']);
 Route::get('/catalog', [CatalogController::class, 'index']);
@@ -51,6 +53,19 @@ Route::post('/favorites/create-folder', [FavoritesController::class, 'createFold
 Route::post('/favorites/remove', [FavoritesController::class, 'remove']);
 Route::post('/favorites/clear-folder', [FavoritesController::class, 'clearFolder']);
 Route::post('/favorites/delete-folder', [FavoritesController::class, 'deleteFolder']);
+Route::post('/favorites/share', [FavoritesController::class, 'share']);
+Route::get('/favorites/share/{token}', [FavoritesController::class, 'showShare']);
+Route::post('/favorites/share/{token}/import', [FavoritesController::class, 'importShare']);
+Route::post('/favorites/price-alert', [FavoritesController::class, 'priceAlert']);
+
+Route::post('/product/{id}/stock-alert', [StockAlertController::class, 'store']);
+Route::get('/api/shipping/quote', [ShippingQuoteController::class, 'quote']);
+Route::get('/api/delivery/cities', [DeliveryController::class, 'cities']);
+Route::get('/api/delivery/points', [DeliveryController::class, 'points']);
+
+Route::get('/checkout', [CheckoutController::class, 'index']);
+Route::post('/checkout', [CheckoutController::class, 'store']);
+Route::get('/checkout/success/{id}', [CheckoutController::class, 'success']);
 
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'index']);
@@ -61,13 +76,6 @@ Route::middleware('auth')->group(function () {
     Route::get('/profile/order/{id}', [ProfileController::class, 'order']);
     Route::post('/profile/order/{id}/cancel', [ProfileController::class, 'cancelOrder']);
     Route::post('/profile/messages/{id}/reply', [MessageController::class, 'reply']);
-
-    Route::get('/api/delivery/cities', [DeliveryController::class, 'cities']);
-    Route::get('/api/delivery/points', [DeliveryController::class, 'points']);
-
-    Route::get('/checkout', [CheckoutController::class, 'index']);
-    Route::post('/checkout', [CheckoutController::class, 'store']);
-    Route::get('/checkout/success/{id}', [CheckoutController::class, 'success']);
 
     Route::post('/product/{id}/review', [ReviewController::class, 'store']);
 });
@@ -120,6 +128,7 @@ Route::middleware('admin')->prefix('admin')->group(function () {
     Route::delete('/sales/{id}', [AdminSaleController::class, 'destroy']);
 
     Route::get('/newsletter', [AdminNewsletterController::class, 'index']);
+    Route::post('/newsletter/send', [AdminNewsletterController::class, 'send']);
     Route::post('/newsletter/{id}/unsubscribe', [AdminNewsletterController::class, 'unsubscribe']);
     Route::delete('/newsletter/{id}', [AdminNewsletterController::class, 'destroy']);
 

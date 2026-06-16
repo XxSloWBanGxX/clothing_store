@@ -3,13 +3,16 @@
 namespace App\Http\Controllers;
 
 use App\Services\PricingService;
+use App\Services\ShippingService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
 class CartController extends Controller
 {
-    public function __construct(private PricingService $pricing)
-    {
+    public function __construct(
+        private PricingService $pricing,
+        private ShippingService $shipping,
+    ) {
     }
 
     public function index()
@@ -35,7 +38,10 @@ class CartController extends Controller
 
         session(['cart' => $cart]);
 
-        return view('cart', compact('cartItems', 'total'));
+        $shipping = $this->shipping->estimateForCart($cart, 'nova_poshta');
+        $grandTotal = $total + (float) $shipping['amount'];
+
+        return view('cart', compact('cartItems', 'total', 'shipping', 'grandTotal'));
     }
 
     public function add(Request $request)

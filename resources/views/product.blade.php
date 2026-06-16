@@ -216,12 +216,40 @@
                         @endif
 
                         <div class="pd-actions">
-                            <button type="submit" class="btn btn-dark pd-cart-btn" {{ ! $inStock ? 'disabled' : '' }}>
-                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
-                                {{ $inStock ? 'Додати в кошик' : 'Немає в наявності' }}
-                            </button>
+                            @if ($inStock)
+                                <button type="submit" class="btn btn-dark pd-cart-btn">
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>
+                                    Додати в кошик
+                                </button>
+                            @endif
                         </div>
                     </form>
+
+                    @if (! $inStock)
+                        <div class="pd-notify-card">
+                            <div class="pd-notify-card-head">
+                                <span class="pd-notify-icon" aria-hidden="true">
+                                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+                                </span>
+                                <div>
+                                    <span class="pd-notify-label">BACK IN STOCK</span>
+                                    <h3 class="pd-notify-title">Повідомити, коли зʼявиться</h3>
+                                    <p class="pd-notify-text">Товар зараз недоступний. Залиш email — надішлемо лист одразу після поповнення складу.</p>
+                                </div>
+                            </div>
+                            <form action="{{ url('/product/' . $product['id'] . '/stock-alert') }}" method="POST" class="pd-notify-form">
+                                @csrf
+                                <div class="pd-notify-field">
+                                    <span class="pd-notify-field-icon" aria-hidden="true">@</span>
+                                    <input type="email" name="email" id="stockAlertEmail" placeholder="Ваш email" value="{{ auth()->user()->email ?? '' }}" required autocomplete="email">
+                                    <button type="submit" class="pd-notify-submit">
+                                        <span>Повідомити</span>
+                                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    @endif
 
                     @include('partials.favorite-folder-picker', [
                         'productId' => $product['id'],
@@ -362,6 +390,11 @@
             </div>
         </div>
     </section>
+
+    @include('partials.recently-viewed', [
+        'products' => $data['recentlyViewed'] ?? [],
+        'title' => 'Нещодавно переглянуті',
+    ])
 
     @if (! empty($data['related']))
         <section class="pd-related">

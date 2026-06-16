@@ -90,16 +90,37 @@
 
                     <aside class="cart-summary">
                         <h3>Разом</h3>
-                        <div class="cart-summary-total">
-                            <span>До сплати</span>
-                            <strong>{{ number_format((float) $total, 0, '.', ' ') }} грн</strong>
+
+                        <div class="cart-shipping-block">
+                            <label class="cart-shipping-label">Орієнтовна доставка</label>
+                            <div class="delivery-carrier-tabs cart-carrier-tabs">
+                                @foreach (['nova_poshta' => 'НП', 'ukrposhta' => 'УП', 'meest' => 'Meest', 'courier' => 'Курʼєр', 'pickup' => 'Самовивіз'] as $key => $label)
+                                    <button type="button" class="delivery-carrier-tab cart-carrier-tab {{ $key === 'nova_poshta' ? 'active' : '' }}" data-carrier="{{ $key }}">{{ $label }}</button>
+                                @endforeach
+                            </div>
+                            <input type="hidden" id="cart_carrier" value="nova_poshta">
                         </div>
 
-                        @auth
-                            <a href="{{ url('/checkout') }}" class="btn btn-dark" style="width:100%;">Оформити замовлення</a>
-                        @else
-                            <a href="{{ url('/login') }}" class="btn btn-dark" style="width:100%;">Увійти для замовлення</a>
-                        @endauth
+                        <div class="cart-summary-lines">
+                            <div class="cart-summary-line">
+                                <span>Товари</span>
+                                <strong>{{ number_format((float) $total, 0, '.', ' ') }} грн</strong>
+                            </div>
+                            <div class="cart-summary-line">
+                                <span>Доставка</span>
+                                <strong id="shippingAmount">{{ $shipping['label'] ?? '—' }}</strong>
+                            </div>
+                        </div>
+
+                        <div class="cart-summary-total">
+                            <span>До сплати</span>
+                            <strong id="cartGrandTotal">{{ number_format((float) ($grandTotal ?? $total), 0, '.', ' ') }} грн</strong>
+                        </div>
+
+                        <a href="{{ url('/checkout') }}" class="btn btn-dark" style="width:100%;">Оформити замовлення</a>
+                        @guest
+                            <p class="cart-guest-note">Без реєстрації — достатньо email і телефону на checkout.</p>
+                        @endguest
 
                         <a href="{{ url('/catalog') }}" class="btn btn-light" style="width:100%; margin-top:10px;">Продовжити покупки</a>
                     </aside>
@@ -108,5 +129,8 @@
         </div>
     </section>
 </main>
+
+<script>document.body.dataset.cartSubtotal = '{{ (float) $total }}';</script>
+<script src="{{ asset('assets/js/shipping-quote.js') }}"></script>
 
 @endsection

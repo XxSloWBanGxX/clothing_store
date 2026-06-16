@@ -37,10 +37,28 @@
             <h3 class="adm-settings-card-title">Як це працює</h3>
             <ul class="adm-info-list">
                 <li>Клієнт вводить email у блоці «Розсилка новинок» у футері</li>
-                <li>Адреса зберігається тут — для майбутніх кампаній або експорту</li>
+                <li>Адреса зберігається тут — для кампаній або експорту</li>
                 <li><strong>Відписати</strong> — позначає email як неактивний, але залишає запис</li>
                 <li><strong>Видалити</strong> — повністю прибирає email з бази</li>
             </ul>
+        </div>
+
+        <div class="adm-settings-card">
+            <h3 class="adm-settings-card-title">Надіслати кампанію</h3>
+            <p class="adm-settings-card-desc">Наприклад «Нова колекція» — лист піде всім активним підписникам ({{ $stats['active'] }}).</p>
+            <form action="{{ url('/admin/newsletter/send') }}" method="POST" class="adm-campaign-form">
+                @csrf
+                <div class="form-group">
+                    <label for="campaign_subject">Тема листа</label>
+                    <input type="text" id="campaign_subject" name="subject" value="{{ old('subject', 'Нова колекція — CLOTHSTORE') }}" required maxlength="200">
+                </div>
+                <div class="form-group">
+                    <label for="campaign_body">Текст</label>
+                    <textarea id="campaign_body" name="body" rows="6" required placeholder="Привіт! Ми щойно опублікували нову колекцію…">{{ old('body') }}</textarea>
+                </div>
+                @error('send')<p class="form-error">{{ $message }}</p>@enderror
+                <button type="submit" class="btn btn-dark" onclick="return confirm('Надіслати розсилку {{ $stats['active'] }} підписникам?')">Надіслати розсилку</button>
+            </form>
         </div>
 
         <div class="adm-marketing-toolbar">

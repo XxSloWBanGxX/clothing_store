@@ -58,19 +58,19 @@
                         <div class="checkout-grid">
                             <div class="form-group checkout-grid-full">
                                 <label for="full_name">Імʼя та прізвище</label>
-                                <input type="text" id="full_name" name="full_name" value="{{ old('full_name', $user->name) }}" placeholder="Іван Петренко">
+                                <input type="text" id="full_name" name="full_name" value="{{ old('full_name', $userRow->name ?? '') }}" placeholder="Іван Петренко">
                                 @error('full_name')<small class="form-error">{{ $message }}</small>@enderror
                             </div>
 
                             <div class="form-group">
                                 <label for="phone">Телефон</label>
-                                <input type="text" id="phone" name="phone" value="{{ old('phone', $user->phone) }}" placeholder="+380 XX XXX XX XX">
+                                <input type="text" id="phone" name="phone" value="{{ old('phone', $userRow->phone ?? '') }}" placeholder="+380 XX XXX XX XX">
                                 @error('phone')<small class="form-error">{{ $message }}</small>@enderror
                             </div>
 
                             <div class="form-group">
                                 <label for="email">Email</label>
-                                <input type="email" id="email" name="email" value="{{ old('email', $user->email) }}" placeholder="you@email.com">
+                                <input type="email" id="email" name="email" value="{{ old('email', $userRow->email ?? '') }}" placeholder="you@email.com">
                                 @error('email')<small class="form-error">{{ $message }}</small>@enderror
                             </div>
                         </div>
@@ -81,7 +81,7 @@
                             <span class="checkout-card-num">2</span>
                             <div>
                                 <h2>Доставка</h2>
-                                <p>Адреса з профілю підставиться автоматично</p>
+                                <p>@auth Адреса з профілю підставиться автоматично @else Вкажи місто та відділення @endauth</p>
                             </div>
                         </header>
 
@@ -161,7 +161,7 @@
                                     <div class="form-group checkout-grid-full">
                                         <label for="card_holder">Імʼя на картці</label>
                                         <input type="text" id="card_holder" name="card_holder" autocomplete="cc-name"
-                                               placeholder="BOGDAN MOSEYCHUK" value="{{ old('card_holder', strtoupper($user->name ?? '')) }}">
+                                               placeholder="BOGDAN MOSEYCHUK" value="{{ old('card_holder', strtoupper($userRow->name ?? '')) }}">
                                         @error('card_holder')<small class="form-error">{{ $message }}</small>@enderror
                                     </div>
 
@@ -223,7 +223,7 @@
                         @endif
                         <div class="checkout-summary-line">
                             <span>Доставка</span>
-                            <strong>За тарифами перевізника</strong>
+                            <strong id="shippingAmount">{{ $shipping['label'] ?? '—' }}</strong>
                         </div>
                     </div>
 
@@ -253,7 +253,9 @@
     </section>
 </main>
 
+<script>document.body.dataset.cartSubtotal = '{{ (float) $total - (float) ($discount ?? 0) }}';</script>
 <script src="{{ asset('assets/js/checkout.js') }}"></script>
 <script src="{{ asset('assets/js/delivery-picker.js') }}"></script>
+<script src="{{ asset('assets/js/shipping-quote.js') }}"></script>
 
 @endsection

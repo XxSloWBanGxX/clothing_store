@@ -184,7 +184,62 @@ class AdminController extends Controller
 
         $statusLabels = self::orderStatusLabels();
 
-        return view('admin.dashboard', compact('stats', 'recentOrders', 'lowStockProducts', 'statusLabels'));
+        $days = 14;
+        $salesByDay = [];
+        for ($i = $days - 1; $i >= 0; $i--) {
+            $date = now()->subDays($i)->toDateString();
+            $salesByDay[$date] = 0.0;
+        }
+
+        $orderRows = DB::table('orders')
+            ->where('status', '!=', 'cancelled')
+            ->where('created_at', '>=', now()->subDays($days)->startOfDay())
+            ->selectRaw('DATE(created_at) as day, SUM(total_amount) as revenue, COUNT(*) as cnt')
+            ->groupBy('day')
+            ->get();
+
+        foreach ($orderRows as $row) {
+            if (isset($salesByDay[$row->day])) {
+                $salesByDay[$row->day] = (float) $row->revenue;
+            }
+        }
+
+        $chartSales = [
+            'labels' => array_map(fn ($d) => \Illuminate\Support\Carbon::parse($d)->format('d.m'), array_keys($salesByDay)),
+            'values' => array_values($salesByDay),
+        ];
+
+        $topProducts = DB::table('order_items')
+            ->join('orders', 'orders.id', '=', 'order_items.order_id')
+            ->where('orders.status', '!=', 'cancelled')
+            ->where('orders.created_at', '>=', now()->subDays(30))
+            ->select('order_items.product_name', DB::raw('SUM(order_items.quantity) as qty_sold'))
+            ->groupBy('order_items.product_name')
+            ->orderByDesc('qty_sold')
+            ->limit(8)
+            ->get();
+
+        $chartTop = [
+            'labels' => $topProducts->pluck('product_name')->map(fn ($n) => \Illuminate\Support\Str::limit($n, 22))->all(),
+            'values' => $topProducts->pluck('qty_sold')->map(fn ($v) => (int) $v)->all(),
+        ];
+
+        $sessionsEstimate = max(1, (int) DB::table('users')->where('role', 'user')->count() * 3);
+        $ordersMonth = (int) DB::table('orders')
+            ->where('created_at', '>=', now()->subDays(30))
+            ->count();
+        $conversionRate = round(min(100, ($ordersMonth / $sessionsEstimate) * 100), 1);
+
+        return view('admin.dashboard', compact(
+            'stats',
+            'recentOrders',
+            'lowStockProducts',
+            'statusLabels',
+            'chartSales',
+            'chartTop',
+            'conversionRate',
+            'ordersMonth',
+        ));
     }
 
     public function products(Request $request)

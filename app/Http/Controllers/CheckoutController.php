@@ -6,6 +6,7 @@ use App\Services\CardPaymentService;
 use App\Services\Delivery\UserDeliveryStorage;
 use App\Services\PricingService;
 use App\Services\PromoService;
+use App\Services\ShippingService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -15,8 +16,10 @@ use Illuminate\Validation\ValidationException;
 
 class CheckoutController extends Controller
 {
-    public function __construct(private PricingService $pricing)
-    {
+    public function __construct(
+        private PricingService $pricing,
+        private ShippingService $shipping,
+    ) {
     }
 
     public function index()
@@ -27,26 +30,16 @@ class CheckoutController extends Controller
             return redirect('/cart');
         }
 
-        $cartItems = [];
-        $total = 0;
-
-        foreach ($cart as $productId => $item) {
-            $product = DB::table('products')->where('id', $productId)->first();
-            if ($product) {
-                $item['price'] = $this->pricing->getEffectivePrice($product);
-                $cart[$productId]['price'] = $item['price'];
-            }
-
-            $subtotal = (float) $item['price'] * (int) $item['quantity'];
-            $total += $subtotal;
-            $cartItems[] = array_merge($item, ['subtotal' => $subtotal]);
-        }
-
-        session(['cart' => $cart]);
+        [$cartItems, $total] = $this->buildCartTotals($cart);
+        $itemCount = array_sum(array_column($cartItems, 'quantity'));
+        $carrier = old('delivery_carrier', 'nova_poshta');
+        $shipping = $this->shipping->estimateForCart(session('cart', []), $carrier);
 
         $user = Auth::user();
-        $userRow = DB::table('users')->where('id', $user->id)->first();
-        $deliverySaved = UserDeliveryStorage::pickerSaved($userRow, old('delivery_carrier'));
+        $userRow = $user ? DB::table('users')->where('id', $user->id)->first() : null;
+        $deliverySaved = $userRow
+            ? UserDeliveryStorage::pickerSaved($userRow, old('delivery_carrier'))
+            : [];
 
         $discount = 0.0;
         $promoApplied = null;
@@ -54,13 +47,13 @@ class CheckoutController extends Controller
 
         if ($promoCode !== '') {
             $promoService = app(PromoService::class);
-            $promoApplied = $promoService->validate($promoCode, (int) $user->id, $total);
+            $promoApplied = $promoService->validate($promoCode, (int) (Auth::id() ?? 0), $total);
             if ($promoApplied['valid'] ?? false) {
                 $discount = (float) $promoApplied['discount_amount'];
             }
         }
 
-        $finalTotal = max(0, $total - $discount);
+        $finalTotal = max(0, $total - $discount + (float) $shipping['amount']);
 
         return view('checkout', compact(
             'cartItems',
@@ -71,7 +64,9 @@ class CheckoutController extends Controller
             'promoCode',
             'user',
             'userRow',
-            'deliverySaved'
+            'deliverySaved',
+            'shipping',
+            'itemCount',
         ));
     }
 
@@ -114,10 +109,6 @@ class CheckoutController extends Controller
             'address_line.required' => 'Введи адресу або відділення',
             'delivery_method.required' => 'Оберіть спосіб доставки',
             'payment_method.required' => 'Оберіть спосіб оплати',
-            'card_number.required' => 'Введи номер картки',
-            'card_expiry.required' => 'Введи термін дії',
-            'card_cvv.required' => 'Введи CVV',
-            'card_holder.required' => 'Введи імʼя на картці',
         ]);
 
         $stockErrors = [];
@@ -135,24 +126,21 @@ class CheckoutController extends Controller
             return redirect('/cart')->with('stockError', implode(' ', $stockErrors));
         }
 
-        $total = 0;
-        foreach ($cart as $productId => $item) {
-            $product = DB::table('products')->where('id', $productId)->first();
-            if ($product) {
-                $item['price'] = $this->pricing->getEffectivePrice($product);
-                $cart[$productId]['price'] = $item['price'];
-            }
-            $total += (float) $item['price'] * (int) $item['quantity'];
-        }
-
-        session(['cart' => $cart]);
+        [$cartItems, $total] = $this->buildCartTotals($cart);
+        $itemCount = array_sum(array_column($cartItems, 'quantity'));
+        $shippingQuote = $this->shipping->calculate(
+            $validated['delivery_carrier'],
+            $total,
+            $itemCount
+        );
+        $shippingAmount = (float) $shippingQuote['amount'];
 
         $discount = 0.0;
         $promoCode = null;
         $promoData = null;
 
         if ($request->filled('promo_code')) {
-            $promoData = $promoService->validate($request->input('promo_code'), (int) Auth::id(), $total);
+            $promoData = $promoService->validate($request->input('promo_code'), (int) (Auth::id() ?? 0), $total);
 
             if (! ($promoData['valid'] ?? false)) {
                 return back()->withInput()->withErrors(['promo_code' => $promoData['message'] ?? 'Некоректний промокод']);
@@ -162,7 +150,7 @@ class CheckoutController extends Controller
             $promoCode = $promoData['code'];
         }
 
-        $payableTotal = max(0, $total - $discount);
+        $payableTotal = max(0, $total - $discount + $shippingAmount);
 
         $paymentStatus = 'pending';
         $orderStatus = 'new';
@@ -182,9 +170,11 @@ class CheckoutController extends Controller
             }
         }
 
-        $orderId = DB::transaction(function () use ($cart, $validated, $total, $payableTotal, $discount, $promoCode, $paymentStatus, $orderStatus, $cardLast4, $paymentReference) {
+        $userId = Auth::id();
+
+        $orderId = DB::transaction(function () use ($cart, $validated, $payableTotal, $discount, $promoCode, $paymentStatus, $orderStatus, $cardLast4, $paymentReference, $userId, $shippingAmount) {
             $orderData = [
-                'user_id' => Auth::id(),
+                'user_id' => $userId,
                 'full_name' => $validated['full_name'],
                 'phone' => $validated['phone'],
                 'email' => $validated['email'],
@@ -198,13 +188,15 @@ class CheckoutController extends Controller
                 'created_at' => now(),
             ];
 
+            if (Schema::hasColumn('orders', 'shipping_amount')) {
+                $orderData['shipping_amount'] = $shippingAmount;
+            }
             if (Schema::hasColumn('orders', 'discount_amount')) {
                 $orderData['discount_amount'] = $discount;
             }
             if (Schema::hasColumn('orders', 'promocode')) {
                 $orderData['promocode'] = $promoCode;
             }
-
             if (Schema::hasColumn('orders', 'payment_status')) {
                 $orderData['payment_status'] = $paymentStatus;
                 $orderData['card_last4'] = $cardLast4;
@@ -239,8 +231,8 @@ class CheckoutController extends Controller
             $promoService->markUsed($promoData);
         }
 
-        if (Schema::hasColumn('users', 'delivery_city')) {
-            UserDeliveryStorage::save(Auth::id(), $validated['delivery_carrier'], [
+        if ($userId && Schema::hasColumn('users', 'delivery_city')) {
+            UserDeliveryStorage::save($userId, $validated['delivery_carrier'], [
                 'city' => $validated['city'],
                 'branch' => $validated['address_line'],
                 'city_ref' => $validated['delivery_city_ref'] ?? '',
@@ -250,21 +242,52 @@ class CheckoutController extends Controller
         }
 
         session()->forget('cart');
+        session(['last_guest_order_id' => $orderId]);
 
         return redirect('/checkout/success/' . $orderId);
     }
 
     public function success($id)
     {
-        $order = DB::table('orders')
-            ->where('id', $id)
-            ->where('user_id', Auth::id())
-            ->first();
+        $order = null;
+
+        if (Auth::check()) {
+            $order = DB::table('orders')
+                ->where('id', $id)
+                ->where('user_id', Auth::id())
+                ->first();
+        }
+
+        if (! $order && (int) session('last_guest_order_id') === (int) $id) {
+            $order = DB::table('orders')->where('id', $id)->first();
+        }
 
         if (! $order) {
             return redirect('/');
         }
 
         return view('checkout-success', compact('order'));
+    }
+
+    private function buildCartTotals(array $cart): array
+    {
+        $cartItems = [];
+        $total = 0;
+
+        foreach ($cart as $productId => $item) {
+            $product = DB::table('products')->where('id', $productId)->first();
+            if ($product) {
+                $item['price'] = $this->pricing->getEffectivePrice($product);
+                $cart[$productId]['price'] = $item['price'];
+            }
+
+            $subtotal = (float) $item['price'] * (int) $item['quantity'];
+            $total += $subtotal;
+            $cartItems[] = array_merge($item, ['subtotal' => $subtotal]);
+        }
+
+        session(['cart' => $cart]);
+
+        return [$cartItems, $total];
     }
 }

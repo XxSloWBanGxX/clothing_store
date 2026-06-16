@@ -14,7 +14,12 @@
     <div class="adm-chat-page-head">
         <div>
             <a href="{{ url('/admin/messages') }}" class="adm-back-link">← Усі діалоги</a>
-            <h2>{{ $clientName }}</h2>
+            <h2>
+                {{ $clientName }}
+                @if (! empty($userOnline))
+                    <span class="adm-online-dot" title="Онлайн">● онлайн</span>
+                @endif
+            </h2>
             <p class="adm-cell-muted">{{ $clientEmail }} @if ($conversation->user_phone) · {{ $conversation->user_phone }} @endif</p>
         </div>
         <div class="adm-row-actions">

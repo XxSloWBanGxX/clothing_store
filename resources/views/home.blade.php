@@ -152,6 +152,12 @@
         </div>
     </section>
 
+    </section>
+
+    @include('partials.recently-viewed', [
+        'products' => $data['recentlyViewed'] ?? [],
+    ])
+
     <section class="banner-section">
         <div class="container">
             <div class="banner-box">

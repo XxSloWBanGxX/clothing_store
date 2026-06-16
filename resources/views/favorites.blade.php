@@ -31,6 +31,24 @@
             @if (session('success'))
                 <div class="alert-success fav-alert">{{ session('success') }}</div>
             @endif
+            @if (session('shareUrl'))
+                <div class="fav-share-success" role="status">
+                    <div class="fav-share-success-icon" aria-hidden="true">
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+                    </div>
+                    <div class="fav-share-success-body">
+                        <strong>Посилання готове</strong>
+                        <p>Скопіюй і надішли — список «{{ $activeFolder }}» відкриється одразу.</p>
+                        <div class="fav-share-success-row">
+                            <input type="text" readonly value="{{ session('shareUrl') }}" id="favShareUrl" class="fav-share-url-input">
+                            <button type="button" class="btn btn-dark btn-sm fav-share-copy-btn" data-copy-target="favShareUrl">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+                                Копіювати
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            @endif
 
             @if (empty($foldersData))
                 <div class="fav-empty">
@@ -89,6 +107,27 @@
                                 @endif
                             </div>
                         </div>
+
+                        @if (! empty($activeItems))
+                            <div class="fav-share-panel">
+                                <div class="fav-share-panel-visual" aria-hidden="true">
+                                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.59 13.51l6.83 3.98M15.41 6.51l-6.82 3.98"/></svg>
+                                </div>
+                                <div class="fav-share-panel-copy">
+                                    <span class="fav-share-panel-label">SHARE</span>
+                                    <strong>Поділитись списком «{{ $activeFolder }}»</strong>
+                                    <p>Створи посилання — друзі побачать товари та зможуть додати їх у своє обране.</p>
+                                </div>
+                                <form action="{{ url('/favorites/share') }}" method="POST" class="fav-share-panel-action">
+                                    @csrf
+                                    <input type="hidden" name="folder" value="{{ $activeFolder }}">
+                                    <button type="submit" class="fav-share-panel-btn">
+                                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
+                                        Створити посилання
+                                    </button>
+                                </form>
+                            </div>
+                        @endif
 
                         @if (! empty($activeItems))
                             <div class="catalog-grid-v2 fav-products-grid">
@@ -156,6 +195,20 @@
                                                     )),
                                                 ])
                                             @endif
+                                            <details class="fav-alert-toggle">
+                                                <summary>
+                                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+                                                    Сповістити про знижку
+                                                </summary>
+                                                <form action="{{ url('/favorites/price-alert') }}" method="POST" class="fav-price-alert-form">
+                                                    @csrf
+                                                    <input type="hidden" name="product_id" value="{{ (int) $product['id'] }}">
+                                                    <div class="fav-notify-field">
+                                                        <input type="email" name="email" placeholder="Ваш email" value="{{ auth()->user()->email ?? '' }}" required>
+                                                        <button type="submit" class="btn btn-dark btn-sm">OK</button>
+                                                    </div>
+                                                </form>
+                                            </details>
                                             <a href="{{ url('/product/' . (int) $product['id']) }}" class="catalog-item-more">Детальніше →</a>
                                         </div>
                                     </article>
@@ -175,4 +228,18 @@
         </div>
     </section>
 </main>
+
+<script>
+document.querySelectorAll('[data-copy-target]').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+        var input = document.getElementById(btn.dataset.copyTarget);
+        if (! input) return;
+        navigator.clipboard.writeText(input.value).then(function () {
+            var old = btn.innerHTML;
+            btn.textContent = 'Скопійовано';
+            setTimeout(function () { btn.innerHTML = old; }, 2000);
+        });
+    });
+});
+</script>
 @endsection

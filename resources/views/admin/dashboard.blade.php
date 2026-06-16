@@ -32,6 +32,39 @@
     </article>
 </section>
 
+<section class="adm-kpi-grid adm-kpi-grid--4">
+    <article class="adm-kpi-card">
+        <span class="adm-kpi-label">Конверсія (30 днів)</span>
+        <strong class="adm-kpi-value">{{ $conversionRate ?? 0 }}%</strong>
+        <small>{{ (int) ($ordersMonth ?? 0) }} замовлень</small>
+    </article>
+</section>
+
+<section class="adm-grid-2">
+    <div class="adm-panel">
+        <div class="adm-panel-head">
+            <div>
+                <h2>Продажі за 14 днів</h2>
+                <p>Виручка по днях, грн</p>
+            </div>
+        </div>
+        <div class="adm-chart-wrap">
+            <canvas id="chartSales" height="120"></canvas>
+        </div>
+    </div>
+    <div class="adm-panel">
+        <div class="adm-panel-head">
+            <div>
+                <h2>Топ товарів</h2>
+                <p>За кількістю продажів за 30 днів</p>
+            </div>
+        </div>
+        <div class="adm-chart-wrap">
+            <canvas id="chartTop" height="120"></canvas>
+        </div>
+    </div>
+</section>
+
 <section class="adm-grid-2">
     <div class="adm-panel">
         <div class="adm-panel-head">
@@ -146,4 +179,47 @@
         </a>
     </div>
 </section>
+@endsection
+
+@section('admin_scripts')
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const sales = @json($chartSales ?? ['labels' => [], 'values' => []]);
+    const top = @json($chartTop ?? ['labels' => [], 'values' => []]);
+
+    if (document.getElementById('chartSales') && sales.labels.length) {
+        new Chart(document.getElementById('chartSales'), {
+            type: 'line',
+            data: {
+                labels: sales.labels,
+                datasets: [{
+                    label: 'Виручка',
+                    data: sales.values,
+                    borderColor: '#111',
+                    backgroundColor: 'rgba(0,0,0,0.06)',
+                    fill: true,
+                    tension: 0.3,
+                }],
+            },
+            options: { plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } },
+        });
+    }
+
+    if (document.getElementById('chartTop') && top.labels.length) {
+        new Chart(document.getElementById('chartTop'), {
+            type: 'bar',
+            data: {
+                labels: top.labels,
+                datasets: [{
+                    label: 'Продано',
+                    data: top.values,
+                    backgroundColor: '#111',
+                }],
+            },
+            options: { indexAxis: 'y', plugins: { legend: { display: false } }, scales: { x: { beginAtZero: true } } },
+        });
+    }
+});
+</script>
 @endsection

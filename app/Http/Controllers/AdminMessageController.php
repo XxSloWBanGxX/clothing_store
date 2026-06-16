@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Services\PresenceService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -9,6 +10,21 @@ use Illuminate\Support\Facades\Schema;
 
 class AdminMessageController extends Controller
 {
+    private function conversationUserColumns(): array
+    {
+        $columns = [
+            'users.name as user_name',
+            'users.username as user_username',
+            'users.email as user_email',
+        ];
+
+        if (Schema::hasColumn('users', 'last_seen_at')) {
+            $columns[] = 'users.last_seen_at as user_last_seen_at';
+        }
+
+        return $columns;
+    }
+
     public function index()
     {
         if (! Schema::hasTable('conversations')) {
@@ -19,12 +35,7 @@ class AdminMessageController extends Controller
 
         $query = DB::table('conversations')
             ->leftJoin('users', 'users.id', '=', 'conversations.user_id')
-            ->select(
-                'conversations.*',
-                'users.name as user_name',
-                'users.username as user_username',
-                'users.email as user_email'
-            )
+            ->select(array_merge(['conversations.*'], $this->conversationUserColumns()))
             ->orderByDesc('conversations.last_message_at')
             ->orderByDesc('conversations.id');
 
@@ -46,31 +57,33 @@ class AdminMessageController extends Controller
                 ->orderByDesc('id')
                 ->value('body');
 
+            $row->user_online = PresenceService::isOnline(null, $row->user_last_seen_at ?? null);
+
             return $row;
         });
 
         $users = DB::table('users')->where('role', 'user')->orderBy('name')->get(['id', 'name', 'email']);
 
-        return view('admin.messages', compact('conversations', 'statusFilter', 'users'));
+        $onlineUsersCount = PresenceService::onlineUsersCount();
+
+        return view('admin.messages', compact('conversations', 'statusFilter', 'users', 'onlineUsersCount'));
     }
 
     public function show($id)
     {
         $conversation = DB::table('conversations')
             ->leftJoin('users', 'users.id', '=', 'conversations.user_id')
-            ->select(
-                'conversations.*',
-                'users.name as user_name',
-                'users.username as user_username',
-                'users.email as user_email',
-                'users.phone as user_phone'
-            )
+            ->select(array_merge(['conversations.*'], array_merge($this->conversationUserColumns(), [
+                'users.phone as user_phone',
+            ])))
             ->where('conversations.id', $id)
             ->first();
 
         if (! $conversation) {
             abort(404);
         }
+
+        $userOnline = PresenceService::isOnline(null, $conversation->user_last_seen_at ?? null);
 
         DB::table('conversation_messages')
             ->where('conversation_id', $id)
@@ -83,7 +96,7 @@ class AdminMessageController extends Controller
             ->orderBy('id')
             ->get();
 
-        return view('admin.message-show', compact('conversation', 'messages'));
+        return view('admin.message-show', compact('conversation', 'messages', 'userOnline'));
     }
 
     public function reply(Request $request, $id)

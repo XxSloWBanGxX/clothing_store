@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Product;
 use App\Services\PricingService;
+use App\Services\RecentlyViewedService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -22,6 +23,8 @@ class ProductController extends Controller
             ->toArray();
 
         $product = $this->pricing->applyToProduct($product);
+
+        RecentlyViewedService::track((int) $id);
 
         // 2. Дістаємо додаткові дані
         $images = json_decode(json_encode(DB::table('product_images')->where('product_id', $id)->orderBy('sort_order')->get()), true);
@@ -61,6 +64,8 @@ class ProductController extends Controller
 
         $related = $this->pricing->applyToMany($related);
 
+        $recentlyViewed = RecentlyViewedService::getProducts(8, (int) $id);
+
         // 3. Пакуємо все в один масив $data
         $data = [
             'product' => $product,
@@ -70,6 +75,7 @@ class ProductController extends Controller
             'reviews' => $reviews,
             'avgRating' => $avgRating,
             'related' => $related,
+            'recentlyViewed' => $recentlyViewed,
             'favoriteFolders' => array_keys(session('favorite_folders', ['Обране' => []])),
         ];
 

@@ -4,7 +4,9 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Schema;
+use App\Mail\NewsletterCampaignMail;
 
 class AdminNewsletterController extends Controller
 {
@@ -56,6 +58,71 @@ class AdminNewsletterController extends Controller
         });
 
         return view('admin.newsletter', compact('subscribers', 'filtered', 'stats', 'search', 'filter'));
+    }
+
+    public function send(Request $request)
+    {
+        $validated = $request->validate([
+            'subject' => ['required', 'string', 'max:200'],
+            'body' => ['required', 'string', 'max:10000'],
+        ], [
+            'subject.required' => 'Введи тему листа',
+            'body.required' => 'Введи текст розсилки',
+        ]);
+
+        if (! Schema::hasTable('newsletter_subscribers')) {
+            return back()->withErrors(['send' => 'Таблиця підписників не знайдена']);
+        }
+
+        $recipients = DB::table('newsletter_subscribers')
+            ->get()
+            ->filter(fn ($row) => $this->isActive($row));
+
+        if ($recipients->isEmpty()) {
+            return back()->withErrors(['send' => 'Немає активних підписників для розсилки']);
+        }
+
+        $sent = 0;
+        $failed = 0;
+
+        foreach ($recipients as $subscriber) {
+            try {
+                Mail::to($subscriber->email)->send(new NewsletterCampaignMail(
+                    $validated['subject'],
+                    $validated['body'],
+                ));
+                $sent++;
+            } catch (\Throwable $e) {
+                $failed++;
+            }
+        }
+
+        if (Schema::hasTable('newsletter_campaigns')) {
+            $record = [
+                'subject' => $validated['subject'],
+                'body' => $validated['body'],
+            ];
+
+            if (Schema::hasColumn('newsletter_campaigns', 'sent_count')) {
+                $record['sent_count'] = $sent;
+            }
+            if (Schema::hasColumn('newsletter_campaigns', 'failed_count')) {
+                $record['failed_count'] = $failed;
+            }
+            if (Schema::hasColumn('newsletter_campaigns', 'sent_at')) {
+                $record['sent_at'] = now();
+            }
+            if (Schema::hasColumn('newsletter_campaigns', 'created_at')) {
+                $record['created_at'] = now();
+            }
+
+            DB::table('newsletter_campaigns')->insert($record);
+        }
+
+        return redirect('/admin/newsletter')->with(
+            'status',
+            'Розсилку «' . $validated['subject'] . '» надіслано: ' . $sent . ' листів' . ($failed > 0 ? ', помилок: ' . $failed : '')
+        );
     }
 
     public function destroy($id)

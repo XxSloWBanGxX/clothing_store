@@ -9,7 +9,7 @@
     <div class="adm-panel-head">
         <div>
             <h2>Діалоги з клієнтами</h2>
-            <p>Прямий звʼязок з користувачами магазину</p>
+            <p>Прямий звʼязок з користувачами магазину · онлайн зараз: <strong>{{ (int) ($onlineUsersCount ?? 0) }}</strong></p>
         </div>
     </div>
 
@@ -42,7 +42,12 @@
             @endphp
             <a href="{{ url('/admin/messages/' . $conversation->id) }}" class="adm-chat-list-item {{ (int) $conversation->unread_count > 0 ? 'has-unread' : '' }}">
                 <div class="adm-chat-list-main">
-                    <strong>{{ $title }}</strong>
+                    <strong>
+                        {{ $title }}
+                        @if (! empty($conversation->user_online))
+                            <span class="adm-online-dot" title="Онлайн">●</span>
+                        @endif
+                    </strong>
                     <span class="adm-cell-muted">{{ $email }}</span>
                     <p>{{ \Illuminate\Support\Str::limit($conversation->last_preview, 90) }}</p>
                 </div>

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Product;
 use App\Services\PricingService;
+use App\Services\RecentlyViewedService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -58,10 +59,13 @@ class HomeController extends Controller
 
         $featuredProducts = $this->pricing->applyToMany($featuredProducts);
 
+        $recentlyViewed = RecentlyViewedService::getProducts(8);
+
         $data = [
             'featuredProducts' => $featuredProducts,
             'categories' => $categories,
             'newProducts' => $newProducts,
+            'recentlyViewed' => $recentlyViewed,
         ];
 
         return view('home', compact('data')); 
