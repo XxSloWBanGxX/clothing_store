@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Services\Delivery\UserDeliveryStorage;
+use App\Support\WebPublicPath;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -128,9 +129,15 @@ class ProfileController extends Controller
 
         $user = Auth::user();
 
-        $dir = public_path('assets/images/avatars');
+        $dir = WebPublicPath::resolve('assets/images/avatars');
         if (! is_dir($dir)) {
-            mkdir($dir, 0777, true);
+            mkdir($dir, 0775, true);
+        }
+
+        if (! is_writable($dir)) {
+            return redirect('/profile?tab=settings')->withErrors([
+                'avatar' => 'Папка для аватарів недоступна для запису. Зверніться до адміністратора.',
+            ]);
         }
 
         if (! empty($user->avatar)) {

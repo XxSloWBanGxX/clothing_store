@@ -1,0 +1,4 @@
+Host adm-clothstore
+    HostName bg622152.ftp.tools
+    User bg622152
+    Port 22
