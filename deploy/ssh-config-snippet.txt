@@ -2,3 +2,7 @@ Host adm-clothstore
     HostName bg622152.ftp.tools
     User bg622152
     Port 22
+    IdentityFile ~/.ssh/adm_clothstore
+    IdentitiesOnly yes
+    PreferredAuthentications publickey,password
+    NumberOfPasswordPrompts 1

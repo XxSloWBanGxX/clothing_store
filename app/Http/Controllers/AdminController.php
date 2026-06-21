@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Product;
 use App\Services\Delivery\UserDeliveryStorage;
+use App\Support\WebPublicPath;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
@@ -58,10 +59,10 @@ class AdminController extends Controller
 
     private function uploadDir(): string
     {
-        $dir = public_path('assets/images/products');
+        $dir = WebPublicPath::resolve('assets/images/products');
 
         if (! is_dir($dir)) {
-            mkdir($dir, 0777, true);
+            mkdir($dir, 0775, true);
         }
 
         return $dir;

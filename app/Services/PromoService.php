@@ -7,9 +7,9 @@ use Illuminate\Support\Facades\Schema;
 
 class PromoService
 {
-    public function validate(string $code, int $userId, float $subtotal): array
+    public function validate(?string $code, int $userId, float $subtotal): array
     {
-        $code = strtoupper(trim($code));
+        $code = strtoupper(trim((string) ($code ?? '')));
 
         if ($code === '') {
             return ['valid' => false, 'message' => 'Введи промокод'];

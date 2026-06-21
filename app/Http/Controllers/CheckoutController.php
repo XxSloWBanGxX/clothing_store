@@ -43,7 +43,7 @@ class CheckoutController extends Controller
 
         $discount = 0.0;
         $promoApplied = null;
-        $promoCode = old('promo_code', '');
+        $promoCode = trim((string) (old('promo_code') ?? ''));
 
         if ($promoCode !== '') {
             $promoService = app(PromoService::class);

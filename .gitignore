@@ -3,6 +3,8 @@
 .env
 .env.backup
 .env.production
+deploy/deploy.config.json
+deploy/.askpass*
 .phpactor.json
 .phpunit.result.cache
 /.fleet

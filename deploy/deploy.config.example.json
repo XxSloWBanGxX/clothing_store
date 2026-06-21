@@ -1,0 +1,8 @@
+{
+  "sshHost": "bg622152.ftp.tools",
+  "sshUser": "bg622152",
+  "sshPort": 22,
+  "remoteLaravel": "clothstored.shop/clothstore-upload",
+  "remoteWww": "clothstored.shop/www",
+  "sshKeyPath": ""
+}
