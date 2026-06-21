@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>@yield('title', 'Магазин одягу')</title>
     <link rel="stylesheet" href="{{ asset('assets/css/style.css') }}">
+    <link rel="stylesheet" href="{{ asset('assets/css/responsive.css') }}">
 </head>
 <body>
 
@@ -104,14 +105,20 @@
             @endauth
         </div>
 
-        <button class="burger" id="burgerBtn" aria-label="Відкрити меню">
-            <span></span>
-            <span></span>
-            <span></span>
+        <button class="burger" id="burgerBtn" type="button" aria-label="Відкрити меню" aria-expanded="false" aria-controls="mobileMenu">
+            <svg class="burger-icon" width="22" height="22" viewBox="0 0 24 24" aria-hidden="true">
+                <rect class="burger-bar burger-bar-1" x="4" y="6" width="16" height="2" rx="1"></rect>
+                <rect class="burger-bar burger-bar-2" x="4" y="11" width="16" height="2" rx="1"></rect>
+                <rect class="burger-bar burger-bar-3" x="4" y="16" width="16" height="2" rx="1"></rect>
+            </svg>
         </button>
     </div>
 
     <div class="mobile-menu" id="mobileMenu">
+        <form action="{{ url('/catalog') }}" method="GET" class="mobile-menu-search">
+            <input type="search" name="search" placeholder="Пошук товарів..." value="{{ request('search') }}" autocomplete="off">
+            <button type="submit" class="btn btn-dark btn-sm">Знайти</button>
+        </form>
         <a href="{{ url('/') }}" class="mobile-link">Головна</a>
         <a href="{{ url('/catalog') }}" class="mobile-link">Каталог</a>
         @if (! empty($navCategories))

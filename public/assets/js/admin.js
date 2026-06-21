@@ -29,6 +29,16 @@ document.addEventListener('DOMContentLoaded', function () {
 
     overlay.addEventListener('click', closeSidebar);
 
+    sidebar.querySelectorAll('.adm-nav-link, .adm-foot-link, .adm-foot-btn').forEach(function (link) {
+        link.addEventListener('click', closeSidebar);
+    });
+
+    document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape' && sidebar.classList.contains('is-open')) {
+            closeSidebar();
+        }
+    });
+
     window.addEventListener('resize', function () {
         if (window.innerWidth > 1024) {
             closeSidebar();

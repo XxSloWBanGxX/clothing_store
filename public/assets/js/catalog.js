@@ -57,6 +57,8 @@ document.addEventListener('DOMContentLoaded', function () {
         document.body.classList.toggle('catalog-filters-open', open);
     };
 
+    setFiltersOpen(false);
+
     if (filterToggle) {
         filterToggle.addEventListener('click', () => setFiltersOpen(true));
     }

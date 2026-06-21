@@ -3,9 +3,57 @@ document.addEventListener('DOMContentLoaded', function () {
     const mobileMenu = document.getElementById('mobileMenu');
 
     if (burgerBtn && mobileMenu) {
+        const closeMobileMenu = () => {
+            mobileMenu.classList.remove('active');
+            burgerBtn.classList.remove('active');
+            burgerBtn.setAttribute('aria-expanded', 'false');
+            burgerBtn.setAttribute('aria-label', 'Відкрити меню');
+            document.body.classList.remove('menu-open');
+        };
+
+        const openMobileMenu = () => {
+            mobileMenu.classList.add('active');
+            burgerBtn.classList.add('active');
+            burgerBtn.setAttribute('aria-expanded', 'true');
+            burgerBtn.setAttribute('aria-label', 'Закрити меню');
+            document.body.classList.add('menu-open');
+        };
+
         burgerBtn.addEventListener('click', function () {
-            mobileMenu.classList.toggle('active');
+            if (mobileMenu.classList.contains('active')) {
+                closeMobileMenu();
+            } else {
+                openMobileMenu();
+            }
         });
+
+        mobileMenu.querySelectorAll('a.mobile-link, button.mobile-logout-btn').forEach(function (link) {
+            link.addEventListener('click', closeMobileMenu);
+        });
+
+        document.addEventListener('click', function (e) {
+            if (!mobileMenu.classList.contains('active')) {
+                return;
+            }
+
+            if (!mobileMenu.contains(e.target) && !burgerBtn.contains(e.target)) {
+                closeMobileMenu();
+            }
+        });
+
+        document.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape' && mobileMenu.classList.contains('active')) {
+                closeMobileMenu();
+            }
+        });
+
+        window.addEventListener('resize', function () {
+            if (window.innerWidth > 1024) {
+                closeMobileMenu();
+            }
+        });
+
+        closeMobileMenu();
     }
 
     const maxPriceRange = document.getElementById('max_price_range');

@@ -85,6 +85,7 @@ textarea {
 .nav-link {
     color: var(--text);
     transition: 0.25s;
+    white-space: nowrap;
 }
 
 .nav-link:hover,
@@ -151,15 +152,22 @@ textarea {
     background: var(--white);
     border-radius: 12px;
     cursor: pointer;
-    padding: 8px;
+    padding: 0;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    flex-shrink: 0;
 }
 
 .burger span {
     display: block;
+    width: 20px;
     height: 2px;
     background: var(--dark);
-    margin: 6px 0;
+    margin: 0;
     border-radius: 10px;
+    flex-shrink: 0;
 }
 
 .mobile-menu {
@@ -2234,16 +2242,34 @@ textarea {
     }
 }
 
-@media (max-width: 860px) {
-    .main-nav,
-    .header-actions {
+@media (max-width: 1024px) {
+    .main-nav {
+        display: none;
+    }
+
+    .header-search,
+    .user-menu,
+    .header-actions > .btn-outline {
         display: none;
     }
 
     .burger {
-        display: block;
+        display: inline-flex;
+        border: 1px solid var(--line);
     }
 
+    .header-container {
+        min-height: 68px;
+        gap: 12px;
+        flex-wrap: nowrap;
+    }
+
+    .header-actions {
+        margin-left: auto;
+    }
+}
+
+@media (max-width: 860px) {
     .hero-content {
         padding: 34px 24px;
     }
@@ -5782,6 +5808,20 @@ textarea {
     margin-top: 12px;
 }
 
+@media (max-width: 1180px) and (min-width: 1025px) {
+    .header-container {
+        gap: 12px;
+    }
+
+    .main-nav {
+        gap: 14px;
+    }
+
+    .header-search input {
+        width: 120px;
+    }
+}
+
 @media (max-width: 1100px) {
     .user-meta {
         display: none;
@@ -6926,6 +6966,11 @@ textarea {
     inset: 0;
     background: rgba(17, 17, 17, 0.45);
     z-index: 1100;
+    pointer-events: none;
+}
+
+.catalog-overlay:not([hidden]) {
+    pointer-events: auto;
 }
 
 body.catalog-filters-open {
@@ -7671,10 +7716,14 @@ body.catalog-filters-open {
         border-radius: 0 24px 24px 0;
         transform: translateX(-110%);
         transition: transform 0.28s ease;
+        pointer-events: none;
+        visibility: hidden;
     }
 
     .catalog-panel.is-open {
         transform: translateX(0);
+        pointer-events: auto;
+        visibility: visible;
     }
 
     .catalog-panel-scroll {
@@ -7685,7 +7734,7 @@ body.catalog-filters-open {
         display: inline-flex;
     }
 
-    .catalog-overlay {
+    .catalog-overlay:not([hidden]) {
         display: block;
     }
 
