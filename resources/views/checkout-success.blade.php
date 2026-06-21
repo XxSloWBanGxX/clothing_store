@@ -4,6 +4,17 @@
 
 @section('content')
 
+@php
+    $statusLabels = [
+        'new' => 'Нове',
+        'processing' => 'В обробці',
+        'shipped' => 'Відправлено',
+        'completed' => 'Виконано',
+        'cancelled' => 'Скасовано',
+    ];
+    $statusLabel = $statusLabels[$order->status ?? ''] ?? ($order->status ?? '—');
+@endphp
+
 <main class="checkout-page">
     <section class="checkout-success-section">
         <div class="container">
@@ -19,30 +30,30 @@
                 </p>
 
                 <div class="checkout-success-info">
-                    <div class="profile-info-item">
-                        <span>Сума</span>
-                        <strong>{{ number_format((float) $order->total_amount, 0, '.', ' ') }} грн</strong>
+                    <div class="checkout-success-row">
+                        <span class="checkout-success-label">Сума</span>
+                        <strong class="checkout-success-value">{{ number_format((float) $order->total_amount, 0, '.', ' ') }} грн</strong>
                     </div>
-                    <div class="profile-info-item">
-                        <span>Статус</span>
-                        <strong>{{ $order->status }}</strong>
+                    <div class="checkout-success-row">
+                        <span class="checkout-success-label">Статус</span>
+                        <strong class="checkout-success-value">{{ $statusLabel }}</strong>
                     </div>
                     @if (! empty($order->payment_status))
-                        <div class="profile-info-item">
-                            <span>Оплата</span>
-                            <strong>{{ $order->payment_status === 'paid' ? 'Оплачено' : 'Очікує оплати' }}</strong>
+                        <div class="checkout-success-row">
+                            <span class="checkout-success-label">Оплата</span>
+                            <strong class="checkout-success-value">{{ $order->payment_status === 'paid' ? 'Оплачено' : 'Очікує оплати' }}</strong>
                         </div>
                     @endif
                     @if (! empty($order->card_last4))
-                        <div class="profile-info-item">
-                            <span>Картка</span>
-                            <strong>•••• {{ $order->card_last4 }}</strong>
+                        <div class="checkout-success-row">
+                            <span class="checkout-success-label">Картка</span>
+                            <strong class="checkout-success-value">•••• {{ $order->card_last4 }}</strong>
                         </div>
                     @endif
                     @if (! empty($order->payment_reference))
-                        <div class="profile-info-item">
-                            <span>Код платежу</span>
-                            <strong>{{ $order->payment_reference }}</strong>
+                        <div class="checkout-success-row">
+                            <span class="checkout-success-label">Код платежу</span>
+                            <strong class="checkout-success-value checkout-success-value--code">{{ $order->payment_reference }}</strong>
                         </div>
                     @endif
                 </div>

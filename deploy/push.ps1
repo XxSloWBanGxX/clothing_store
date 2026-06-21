@@ -38,17 +38,19 @@ $sshOpts = @(
     '-p', $port,
     '-i', $keyPath,
     '-o', 'IdentitiesOnly=yes',
+    '-o', 'PubkeyAuthentication=yes',
     '-o', 'PreferredAuthentications=publickey,password',
     '-o', 'ConnectTimeout=20',
-    '-o', 'NumberOfPasswordPrompts=3'
+    '-o', 'NumberOfPasswordPrompts=1'
 )
 $scpOpts = @(
     '-P', $port,
     '-i', $keyPath,
     '-o', 'IdentitiesOnly=yes',
+    '-o', 'PubkeyAuthentication=yes',
     '-o', 'PreferredAuthentications=publickey,password',
     '-o', 'ConnectTimeout=20',
-    '-o', 'NumberOfPasswordPrompts=3'
+    '-o', 'NumberOfPasswordPrompts=1'
 )
 
 function Invoke-Ssh {
@@ -58,8 +60,12 @@ function Invoke-Ssh {
 }
 
 function Invoke-Scp {
-    param([string]$Local, [string]$Remote)
-    & scp @scpOpts -q $Local $Remote
+    param(
+        [string[]]$LocalFiles,
+        [string]$RemoteDir
+    )
+    $dest = $sshTarget + ':' + $RemoteDir + '/'
+    & scp @scpOpts -q @LocalFiles $dest
     return $LASTEXITCODE
 }
 
@@ -169,7 +175,7 @@ function Get-RemotePath {
 
 Write-Host ('SSH key: ' + $keyPath) -ForegroundColor DarkGray
 Write-Host ('Target: ' + $sshTarget) -ForegroundColor DarkGray
-Write-Host 'You may be asked for SSH password several times.' -ForegroundColor Yellow
+Write-Host 'Enter SSH password when asked (usually 1-2 times per deploy).' -ForegroundColor Yellow
 
 if ($TestConnection) {
     Test-SshConnection
@@ -189,21 +195,42 @@ if ($toUpload.Count -eq 0) {
 
 Write-Host ('Uploading ' + $toUpload.Count + ' file(s) to ' + $sshTarget + ' ...') -ForegroundColor Cyan
 
+$uploadGroups = @{}
 foreach ($rel in $toUpload) {
     $local = Join-Path $root ($rel.Replace('/', '\'))
     $remote = Get-RemotePath -RelativePath $rel
     $remoteDir = ($remote -replace '/[^/]+$','')
+    if (-not $uploadGroups.ContainsKey($remoteDir)) {
+        $uploadGroups[$remoteDir] = New-Object System.Collections.Generic.List[object]
+    }
+    $uploadGroups[$remoteDir].Add([PSCustomObject]@{
+        Relative = $rel
+        Local = $local
+        Remote = $remote
+    })
+}
 
-    $code = Invoke-Ssh ('mkdir -p "' + $remoteDir + '"')
-    if ($code -ne 0) { Write-Host ('Failed mkdir: ' + $rel) -ForegroundColor Red; exit 1 }
-
-    $dest = $sshTarget + ':' + $remote
-    $code = Invoke-Scp $local $dest
+$uniqueDirs = $uploadGroups.Keys | Sort-Object -Unique
+if ($uniqueDirs.Count -gt 0) {
+    $mkdirCmd = ($uniqueDirs | ForEach-Object { 'mkdir -p "' + $_ + '"' }) -join ' && '
+    $code = Invoke-Ssh $mkdirCmd
     if ($code -ne 0) {
-        Write-Host ('Failed: ' + $rel) -ForegroundColor Red
+        Write-Host 'Failed to create remote folders.' -ForegroundColor Red
         exit 1
     }
-    Write-Host ('  OK ' + $rel)
+}
+
+foreach ($remoteDir in $uniqueDirs) {
+    $items = $uploadGroups[$remoteDir]
+    $localFiles = @($items | ForEach-Object { $_.Local })
+    $code = Invoke-Scp -LocalFiles $localFiles -RemoteDir $remoteDir
+    if ($code -ne 0) {
+        Write-Host ('Failed upload to: ' + $remoteDir) -ForegroundColor Red
+        exit 1
+    }
+    foreach ($item in $items) {
+        Write-Host ('  OK ' + $item.Relative)
+    }
 }
 
 Write-Host 'Running post-deploy on server...' -ForegroundColor Cyan

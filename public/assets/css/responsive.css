@@ -136,7 +136,40 @@ svg {
     }
 }
 
-/* ----- Sale banner ----- */
+/* ----- Checkout success (card payment) ----- */
+
+@media (max-width: 640px) {
+    .checkout-success-section {
+        padding: 40px 0;
+    }
+
+    .checkout-success-box {
+        padding: 28px 18px;
+    }
+
+    .checkout-success-row {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 4px;
+    }
+
+    .checkout-success-value {
+        text-align: left;
+    }
+
+    .checkout-success-actions {
+        flex-direction: column;
+    }
+
+    .checkout-success-actions .btn {
+        width: 100%;
+    }
+
+    .card-payment-layout {
+        grid-template-columns: 1fr;
+    }
+}
+
 
 @media (max-width: 520px) {
     .site-sale-banner {
